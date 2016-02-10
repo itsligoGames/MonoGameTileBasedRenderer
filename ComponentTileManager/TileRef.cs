@@ -1,4 +1,4 @@
-﻿namespace TileTankWar
+﻿namespace TileManagerNS
 {
     public  class TileRef
     {

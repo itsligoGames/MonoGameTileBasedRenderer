@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using TileManagerNS;
-using TileTankWar;
+
 
 namespace ComponentTileManager
 {

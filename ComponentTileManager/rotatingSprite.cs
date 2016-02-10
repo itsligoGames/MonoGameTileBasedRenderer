@@ -5,8 +5,8 @@ using System.Text;
 using AnimatedSprite;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework;
-using TileTankWar;
 using Microsoft.Xna.Framework.Input;
+using TileManagerNS;
 
 namespace AnimatedSprite
 {
