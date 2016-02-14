@@ -31,7 +31,13 @@ namespace AnimatedSprite
                 get { return PixelPosition + new Vector2(FrameWidth/ 2, FrameHeight/ 2); }
                 
             }
-            public float speed = 0.1f;
+
+        public Vector2 CentreTilePos
+        {
+            get { return Tileposition + Vector2.One/2; }
+        }
+
+        public float speed = 0.1f;
             public Vector2 TargetTilePos;
             public STATE MovingState = STATE.STILL;
 
@@ -183,6 +189,7 @@ namespace AnimatedSprite
                 CurrentFrame = 0;
             }
             Tileposition = Vector2.Clamp(Tileposition, Vector2.Zero, TileBound - Vector2.One);
+            
         }
 
         public void checkforMovement()

@@ -1,4 +1,5 @@
 ﻿using AnimatedSprite;
+using Engine.Engines;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Sprites;
@@ -12,16 +13,19 @@ using TileManagerNS;
 namespace ComponentTileManager
 {
 
-    public enum TILETYPES { FREE,PAVEMENT,GROUND,BLUE }
+    public enum TILETYPES { FREE, PAVEMENT, GROUND, BLUE }
 
-    class TileRenderer:DrawableGameComponent
+
+
+    class TileRenderer : DrawableGameComponent
     {
         TileManager _tileManager;
         int _scale = 1;
         private Texture2D _tileSheet;
         private object _font;
         private List<TileRef> _tileRefs = new List<TileRef>();
-        private List<TileRef> _path = new List<TileRef>();
+        private List<Tile> _path = new List<Tile>();
+        private List<SimpleSprite> _pathTiles = new List<SimpleSprite>();
         PlayerWithWeapon _player;
         List<SimpleSprite> _collisionSet = new List<SimpleSprite>();
         Dictionary<TILETYPES, TileRef> _tileTypeRefs = new Dictionary<TILETYPES, TileRef>();
@@ -43,7 +47,6 @@ namespace ComponentTileManager
             }
         }
 
-        
         public TileRenderer(Game game, int[,] tileMap, int tileWidth, int tileHeight) : base(game)
         {
             game.Components.Add(this);
@@ -67,16 +70,31 @@ namespace ComponentTileManager
             string[] backTileNames = { "free", "pavement", "ground", "blue" };
             string[] impassibleTiles = { "free", "ground", "blue" };
 
-            _tileManager.addLayer("background", 
+            _tileManager.addLayer("background",
                 backTileNames, tileMap, _tileRefs, tileWidth, tileHeight);
             _tileManager.ActiveLayer = _tileManager.getLayer("background");
             _tileManager.ActiveLayer.makeImpassable(impassibleTiles);
-            _tileManager.CurrentTile = _tileManager.ActiveLayer.Tiles[0,0];
+            _tileManager.CurrentTile = _tileManager.ActiveLayer.Tiles[0, 0];
             // Setup the collision objects for the layer
             setupCollisionMask();
             // Create an enemy object that will rotate towards the player
             //Tile enemyTile = _tileManager.ActiveLayer.Impassable.First();
             setupEnemies(20, tileWidth, tileHeight);
+            Random r = new Random();
+            showPathTiles(_path);
+        }
+
+        private void showPathTiles(List<Tile> _path)
+        {
+            foreach (Tile t in _path)
+            {
+                SimpleSprite s = new SimpleSprite(
+                    Game.Content.Load<Texture2D>("Collison"),
+                            new Vector2(t.X * t.TileWidth, t.Y * t.TileHeight),
+                                new Vector2(t.TileWidth, t.TileHeight));
+                s.Visible = true;
+                _pathTiles.Add(s);
+            }
         }
 
         public void setupEnemies(int EnemyCount, int tileWidth, int tileHeight)
@@ -89,7 +107,6 @@ namespace ComponentTileManager
             // NOTE: Linq ensures that there are no duplicate positions produced
             var randomEnemyPlaces = enemyPlaces.Select(all => new { all.gid, all.X, all.Y })
                                         .OrderBy(subgroup => subgroup.gid).Take(EnemyCount)
-                                        //.ToList().Select(r => new { r.X, r.Y })
                                         .ToList();
 
             // Do a join on the resulting 10 random places and the original impassible tiles 
@@ -108,26 +125,31 @@ namespace ComponentTileManager
             }
         }
 
-
+        // Creates a simple sprite for all impassible 
         public void setupCollisionMask()
         {
-            foreach (Tile  t in _tileManager.ActiveLayer.Impassable)
+            foreach (Tile t in _tileManager.ActiveLayer.Impassable)
             {
                 _collisionSet.Add(new SimpleSprite(
-                    Game.Content.Load<Texture2D>("Collison"), 
-                            new Vector2(t.X * t.TileWidth, t.Y * t.TileHeight), 
+                    Game.Content.Load<Texture2D>("Collison"),
+                            new Vector2(t.X * t.TileWidth, t.Y * t.TileHeight),
                                 new Vector2(t.TileWidth, t.TileHeight)));
 
             }
-            
+
         }
 
         public override void Update(GameTime gameTime)
         {
-            if(_player != null)
+            if (_player != null)
             {
-                _player.Update(gameTime);
                 _player.pixelMove(_collisionSet);
+                _player.Update(gameTime);
+
+                _tileManager.CurrentTile = _player.CurrentPlayerTile =
+                    _tileManager.ActiveLayer.getPassableTileAt((int)_player.Tileposition.X,
+                                            (int)_player.Tileposition.Y);
+                //_tileManager.CurrentTile = _player.CurrentPlayerTile = getBestTile(_player.Tileposition);
                 foreach (var _enemy in _enemies)
                 {
                     _enemy.follow(_player);
@@ -136,50 +158,88 @@ namespace ComponentTileManager
                 Camera Cam = Game.Services.GetService<Camera>();
                 Cam.follow(_player.PixelPosition,
                  GraphicsDevice.Viewport);
-            }
 
+
+
+            }
+            if (InputEngine.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R))
+            {
+                _pathTiles = new List<SimpleSprite>();
+                Random r = new Random();
+                Tile start = _tileManager.ActiveLayer.Passable[5];
+                //RandomPassableTile();
+                //Point playerPos = _player.Tileposition.ToPoint();
+                //Tile finish = _tileManager.ActiveLayer.Passable
+                //    .Where( t => t.X == playerPos.X && t.Y == playerPos.Y).FirstOrDefault() ;
+                Tile finish = _player.CurrentPlayerTile;
+                _path = Path(start, finish);
+                showPathTiles(_path);
+            }
             base.Update(gameTime);
         }
 
-        //private Tile getOverlappingTile()
-        //{
-        //    foreach (Tile t in _tileManager.ActiveLayer.Tiles)
-        //    {
-        //        Rectangle tRect = new Rectangle(new Point(t.X * t.TileWidth, t.Y * t.TileHeight),
-        //            new Point(t.TileWidth, t.TileHeight));
-        //        if (_player.DrawRectangle.Intersects(tRect) && !t.Passable)
-        //            return t;
-        //    }
-        //    return null;
-        //}
+        // get the best tile based on interscetion for the pusposes of AI movement
+        // in the underlying structure
+        private Tile getBestTile(Vector2 tileposition)
+        {
+            List<Tile> surrounding = _tileManager.ActiveLayer.getSurroundingPassableTiles(_player.CurrentPlayerTile);
+            Tile first = surrounding.FirstOrDefault();
+            // no surrounding tiles just return the current player tile
+            if (first == null) return _player.CurrentPlayerTile;
+            Rectangle playerRect = _player.DrawRectangle;
+            Rectangle overlap;
+            Rectangle tileRect = new Rectangle(first.X* first.TileWidth, first.Y* first.TileHeight, first.TileWidth, first.TileHeight);
+            Rectangle.Intersect(ref playerRect,
+                                   ref tileRect, out overlap);
+            // The current largest overlapping area is the first largest we sample
+            Rectangle currentLargestOverlap = overlap;
+            Tile newPlayerTilePosition = _player.CurrentPlayerTile;
+            foreach(Tile t in surrounding)
+            {
+                // calculate the tile rectangle in pixels
+                tileRect = new Rectangle(t.X * t.TileWidth, t.Y * t.TileHeight, t.TileWidth, t.TileHeight);
+                // Get the overlapping area
+                Rectangle.Intersect(ref playerRect,
+                                       ref tileRect, out overlap);
+                // test overlapping area if it's bigger than previous then we take that tile
+                if (overlap.Size.X > currentLargestOverlap.Size.X && overlap.Size.Y > currentLargestOverlap.Size.Y)
+                    newPlayerTilePosition = t;
+            }
 
-        //private bool passable(DIRECTION direction, Tile currentPlayerTile, List<Tile> nonpassable)
-        //{
-        //    if (_player.MovingState == STATE.MOVING && _player.Direction == DIRECTION.DOWN
-        //        && !_tileManager.ActiveLayer.getadjacentTile("below", _player.CurrentPlayerTile).Passable)
-        //        _player.MovingState = STATE.STILL;
+            return newPlayerTilePosition;
 
-        //    else if (_player.MovingState == STATE.MOVING && _player.Direction == DIRECTION.UP
-        //        && !_tileManager.ActiveLayer.getadjacentTile("above", _player.CurrentPlayerTile).Passable)
-        //        _player.MovingState = STATE.STILL;
+        }
 
-        //    else if (_player.MovingState == STATE.MOVING && _player.Direction == DIRECTION.LEFT
-        //        && !_tileManager.ActiveLayer.getadjacentTile("left", _player.CurrentPlayerTile).Passable)
-        //        _player.MovingState = STATE.STILL;
+        public Tile RandomPassableTile()
+        {
+            var passible = _tileManager.ActiveLayer.Passable
+                                    .Select(subset => new { subset.X, subset.Y, gid = Guid.NewGuid() });
+            // order by the guid and take count positions
+            // NOTE: Linq ensures that there are no duplicate positions produced
+            var randomPlaces = passible.Select(all => new { all.gid, all.X, all.Y })
+                                        .OrderBy(subgroup => subgroup.gid).Take(1)
+                                        //.ToList().Select(r => new { r.X, r.Y })
+                                        .ToList();
 
-        //    else if (_player.MovingState == STATE.MOVING && _player.Direction == DIRECTION.RIGHT
-        //        && !_tileManager.ActiveLayer.getadjacentTile("right", _player.CurrentPlayerTile).Passable)
-        //        _player.MovingState = STATE.STILL;
+            // Do a join on the resulting 10 random places and the original impassible tiles 
+            // to get the actual tile locations
 
-        //    if (_player.MovingState == STATE.MOVING)
-        //        return true;
-        //    else return false;
-        //}
+            Tile PassiblePosition = (from rpos in _tileManager.ActiveLayer.Passable
+                                     join places in randomPlaces
+                                     on new { rpos.X, rpos.Y } equals new { places.X, places.Y }
+                                     select rpos).FirstOrDefault();
+
+            return PassiblePosition;
+        }
 
         public void AddPlayer(PlayerWithWeapon p)
         {
             _player = p;
             p.CurrentPlayerTile = _tileManager.CurrentTile;
+            Tile Finish = _player.CurrentPlayerTile = _tileManager.ActiveLayer.getPassableTileAt((int)_player.Tileposition.X, (int)_player.Tileposition.Y);
+            Tile Start = RandomPassableTile();
+            _path = Path(Start, Finish);
+            showPathTiles(_path);
         }
 
         public override void Draw(GameTime gameTime)
@@ -193,14 +253,15 @@ namespace ComponentTileManager
                 BlendState.AlphaBlend, null, null, null, null, Cam.CurrentCameraTranslation);
             foreach (Tile t in _tileManager.ActiveLayer.Tiles)
             {
-                Vector2 position = new Vector2(t.X * t.TileWidth *_scale, t.Y*t.TileHeight*_scale);
-                sp.Draw(_tileSheet, 
+                Vector2 position = new Vector2(t.X * t.TileWidth * _scale, t.Y * t.TileHeight * _scale);
+                sp.Draw(_tileSheet,
                     new Rectangle(position.ToPoint(), new Point(t.TileWidth * _scale, t.TileHeight * _scale)),
-                    new Rectangle(t.TileRef._sheetPosX * t.TileWidth,t.TileRef._sheetPosY*t.TileHeight,
-                                        t.TileWidth*_scale, t.TileHeight * _scale)
+                    new Rectangle(t.TileRef._sheetPosX * t.TileWidth, t.TileRef._sheetPosY * t.TileHeight,
+                                        t.TileWidth * _scale, t.TileHeight * _scale)
                     , Color.White);
             }
-            if (_player != null) {
+            if (_player != null)
+            {
                 _player.Draw(sp, _tileSheet);
                 foreach (var _enemy in _enemies)
                     _enemy.Draw(sp, _tileSheet);
@@ -213,8 +274,102 @@ namespace ComponentTileManager
             {
                 item.draw(sp);
             }
+            foreach (var item in _pathTiles)
+            {
+                item.draw(sp);
+            }
+
             sp.End();
             base.Draw(gameTime);
+        }
+
+        public List<Tile> Path(Tile Start, Tile Finish)
+        {
+            if (Start == Finish)
+                return new List<Tile> { Start, Finish };
+            TileComparer compare = new TileComparer();
+            Tile Current = Start;
+            List<Tile> passable = _tileManager.ActiveLayer.Passable;
+            List<Tile> visited = new List<Tile>();
+
+            Stack<Tile> frontier = new Stack<Tile>();
+
+            frontier.Push(Start);
+            int best = euclideanDistance(Start, Finish);
+            while (Current != null && Current != Finish)
+            {
+                visited.Add(Current);
+                // get Neighbours
+                var Neighbours = _tileManager.ActiveLayer.adjacentPassable(Current);
+                // discount those already visited
+                var NewNeighbours = Neighbours.Where(n => !visited.Contains(n, compare));
+                // Get best neighbours in decreasing order as they are about to 
+                // pushed onto the frontier
+                var NextNearestNeighbour = NewNeighbours
+                    .Select(nn => new { nn.X, nn.Y, Distance = euclideanDistance(nn, Finish) })
+                    .OrderByDescending(d => d.Distance)
+                    .ToList();
+
+                // get each candidate and add to the frontier in order of Heuristic distance 
+                // furthest gets pushed first
+                foreach (var node in NextNearestNeighbour)
+                {
+                    Tile Nextnode = (from n in Neighbours
+                                     where n.X == node.X && n.Y == node.Y
+                                     select n)
+                             .FirstOrDefault();
+                    if (Nextnode != null)
+                        frontier.Push(Nextnode);
+                }
+                // Choose the next Neighbour as the shortest distance at the head of the stack
+                Tile Next = frontier.Pop();
+                if (Next == null) return null;
+                //else if (absoluteDistance(Next, Finish) <= 0)
+                //        { Current = Finish; if(!visited.Contains(Finish)) visited.Add(Finish); }
+                else if (!visited.Contains(Next, compare)) Current = Next;
+                
+
+            }
+            visited.Add(Finish);
+            return visited;
+        }
+
+        public int euclideanDistance(Tile first, Tile second)
+        {
+            if (first == second)
+                return 0;
+
+            Vector2 vfirst = new Vector2(first.X, first.Y);
+            Vector2 vsecond = new Vector2(second.X, second.Y);
+            int abs_X = Math.Abs(first.X - second.X);
+            int abs_Y = Math.Abs(first.Y - second.Y);
+            int distance = (int)Vector2.DistanceSquared(vfirst, vsecond);
+            return distance;
+        }
+
+
+        public int ManhattanDistance(Tile first, Tile second)
+        {
+            int abs_X = Math.Abs(first.X - second.X);
+            int abs_Y = Math.Abs(first.Y - second.Y);
+            return Math.Abs(abs_X - abs_Y);
+        }
+
+        public class TileComparer : IEqualityComparer<Tile>
+
+        {
+            public int GetHashCode(Tile t)
+            {
+                return t.GetHashCode();
+            }
+
+            public bool Equals(Tile tileA, Tile tileB)
+            {
+                if (tileA.X == tileB.X && tileA.Y == tileB.Y)
+                    return true;
+                else return false;
+
+            }
         }
     }
 }

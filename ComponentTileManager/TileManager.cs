@@ -93,7 +93,7 @@ namespace TileManagerNS
 
         }
 
-
+        
     }
 
     public class Tile 
@@ -203,13 +203,13 @@ namespace TileManagerNS
         {
             get { return Tiles.GetLength(1); }
         }
-        List<TileRef> _tileRefs;
         public int MapHeight
         {
             get { return Tiles.GetLength(0); }
         }
+        List<TileRef> _tileRefs;
         private List<Tile> impassable = new List<Tile>();
-
+        private List<Tile> passable = new List<Tile>();
         public List<TileRef> TileRefs
         {
             get
@@ -222,7 +222,6 @@ namespace TileManagerNS
                 _tileRefs = value;
             }
         }
-
         public List<Tile> Impassable
         {
             get
@@ -234,6 +233,28 @@ namespace TileManagerNS
             {
                 impassable = value;
             }
+        }
+        public List<Tile> Passable
+        {
+            get
+            {
+                return passable;
+            }
+
+            set
+            {
+                passable = value;
+            }
+        }
+        // Get Tile at X Y
+        public Tile getPassableTileAt(int X,int Y)
+        {
+            return passable.Where(t => t.X == X && t.Y == Y).Single();
+        }
+
+        public Tile getImpassableTileAt(int X, int Y)
+        {
+            return Impassable.Where(t => t.X == X && t.Y == Y).Single();
         }
 
         // Check and see if the tile collection has valid adjacent 
@@ -283,7 +304,51 @@ namespace TileManagerNS
             return adjacentTilesImpassible;
 
         }
-        public List<Tile> adjacentPassible(Tile t)
+
+        internal List<Tile> getSurroundingPassableTiles(Tile tile)
+        {
+            return fullAdjacentPassable(tile);
+            
+        }
+
+        public List<Tile> fullAdjacentPassable(Tile t)
+        {
+            List<Tile> adj = new List<Tile>();
+            adj = adjacentPassable(t);
+            List<Tile> diag = new List<Tile>();
+            diag = getDiagPassable(t);
+            adj.AddRange(diag);
+            return adj;
+        }
+
+        private List<Tile> getDiagPassable(Tile t)
+        {
+            List<Tile> diag = new List<Tile>();
+            if (valid("above_left", t))
+            {
+                Tile tile = getadjacentTile("above_left", t);
+                if (tile.Passable) diag.Add(tile);
+            }
+            if (valid("above_right", t))
+            {
+                Tile tile = getadjacentTile("above_right", t);
+                if (tile.Passable) diag.Add(tile);
+            }
+            if (valid("below_left", t))
+            {
+                Tile tile = getadjacentTile("below_left", t);
+                if (tile.Passable) diag.Add(tile);
+            }
+            if (valid("below_right", t))
+            {
+                Tile tile = getadjacentTile("below_right", t);
+                if (tile.Passable) diag.Add(tile);
+            }
+            return diag;
+
+        }
+
+        public List<Tile> adjacentPassable(Tile t)
         {
             List<Tile> adjacentTilesPassible = new List<Tile>();
             if (valid("above", t))
@@ -319,10 +384,29 @@ namespace TileManagerNS
                     if (t.Y - 1 >= 0)
                         return Tiles[t.Y-1,t.X];
                     break;
+                case "above_left":
+                    if (t.Y - 1 >= 0 && t.X -1 > 0)
+                        return Tiles[t.Y - 1, t.X-1];
+                    break;
+
+                case "above_right":
+                    if (t.Y - 1 >= 0 && t.X + 1 < this.MapWidth)
+                        return Tiles[t.Y - 1, t.X +1];
+                    break;
+
                 case "below":
                     if (t.Y + 1 < this.MapHeight)
                         return Tiles[t.Y + 1, t.X];
                     break;
+                case "below_left":
+                    if (t.Y + 1 < this.MapHeight && t.X -1 > 0)
+                        return Tiles[t.Y + 1, t.X -1];
+                    break;
+                case "below_right":
+                    if (t.Y + 1 < this.MapHeight && t.X +1 < this.MapWidth)
+                        return Tiles[t.Y + 1, t.X + 1];
+                    break;
+
                 case "left":
                     if (t.X - 1 >= 0)
                         return Tiles[t.Y, t.X - 1];
@@ -345,10 +429,31 @@ namespace TileManagerNS
                     if(t.Y -1 >= 0)
                     return true;
                     break;
+
+                case "above_left":
+                    if (t.Y - 1 >= 0 && t.X -1 > 0)
+                        return true;
+                    break;
+
+                case "above_right":
+                    if (t.Y - 1 >= 0 && t.X + 1 < this.MapWidth)
+                        return true;
+                    break;
+
                 case "below":
                     if(t.Y + 1 < this.MapHeight)
                     return true;
                     break;
+
+                case "below_left":
+                    if (t.Y + 1 < this.MapHeight && t.X - 1 > 0)
+                        return true;
+                    break;
+                case "below_right":
+                    if (t.Y + 1 < this.MapHeight && t.X + 1 < this.MapWidth)
+                        return true;
+                    break;
+
                 case "left":
                     if(t.X -1 >= 0)
                         return true;
@@ -370,6 +475,7 @@ namespace TileManagerNS
                     impassable.Add(t);
                     t.Passable = false;
                 }
+                else passable.Add(t);
         }
 
             

@@ -178,6 +178,7 @@ namespace ComponentTileManager
                                         new TileRef(2,0,0)
                                         }, 
                 player.FrameWidth, player.FrameHeight, 1f);
+            player.CurrentPlayerTile = _tileRenderer.TileManager.CurrentTile;
             player.loadProjectile(p);
         }
 

@@ -42,6 +42,7 @@
     <Compile Include="CrossHair.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="InputEngine.cs" />
+    <Compile Include="models.cs" />
     <Compile Include="PlayerWithWeapon.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Projectile.cs" />
@@ -69,6 +70,7 @@
     <MonoGameContentReference Include="Content\Content.mgcb" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram1.cd" />
     <None Include="Content\DebugFont.spritefont" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
