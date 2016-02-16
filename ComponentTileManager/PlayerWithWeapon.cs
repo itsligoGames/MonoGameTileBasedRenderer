@@ -190,6 +190,7 @@ namespace AnimatedSprite
             }
             Tileposition = Vector2.Clamp(Tileposition, Vector2.Zero, TileBound - Vector2.One);
             
+            
         }
 
         public void checkforMovement()

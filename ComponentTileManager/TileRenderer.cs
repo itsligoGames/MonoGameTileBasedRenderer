@@ -33,6 +33,8 @@ namespace ComponentTileManager
         List<TILETYPES> _nonPassableTiles = new List<TILETYPES>();
         Vector2 TileTransform;
         List<RotatingSprite> _enemies = new List<RotatingSprite>();
+        List<Tile> _spawnPositions = new List<Tile>();
+        List<Color> _spawnColor = new List<Color> { Color.Blue, Color.White, Color.Red, Color.RosyBrown };
 
         public TileManager TileManager
         {
@@ -79,7 +81,7 @@ namespace ComponentTileManager
             setupCollisionMask();
             // Create an enemy object that will rotate towards the player
             //Tile enemyTile = _tileManager.ActiveLayer.Impassable.First();
-            setupEnemies(20, tileWidth, tileHeight);
+            setupEnemies(5, tileWidth, tileHeight);
             Random r = new Random();
             showPathTiles(_path);
         }
@@ -101,8 +103,10 @@ namespace ComponentTileManager
         {
             // use linq queries on the impassible tiles to choose random locations for enemies
             // First query introduce a random guid into a sub set of locations of impassible tiles
-            var enemyPlaces = _tileManager.ActiveLayer.Impassable
+            var enemyPlaces = _tileManager.ActiveLayer.Passable
+                                    .Where(chosen => chosen.X > 5 && chosen.Y > 5)
                                     .Select(subset => new { subset.X, subset.Y, gid = Guid.NewGuid() });
+                                    
             // order by the guid and take count positions
             // NOTE: Linq ensures that there are no duplicate positions produced
             var randomEnemyPlaces = enemyPlaces.Select(all => new { all.gid, all.X, all.Y })
@@ -112,7 +116,7 @@ namespace ComponentTileManager
             // Do a join on the resulting 10 random places and the original impassible tiles 
             // to get the actual tile locations
 
-            List<Tile> enemyPositions = (from enemyPos in _tileManager.ActiveLayer.Impassable
+            List<Tile> enemyPositions = (from enemyPos in _tileManager.ActiveLayer.Passable
                                          join places in randomEnemyPlaces
                                          on new { enemyPos.X, enemyPos.Y } equals new { places.X, places.Y }
                                          select enemyPos).ToList();
@@ -147,8 +151,8 @@ namespace ComponentTileManager
                 _player.Update(gameTime);
 
                 _tileManager.CurrentTile = _player.CurrentPlayerTile =
-                    _tileManager.ActiveLayer.getPassableTileAt((int)_player.Tileposition.X,
-                                            (int)_player.Tileposition.Y);
+                    _tileManager.ActiveLayer.getPassableTileAt((int)Math.Round(_player.Tileposition.X),
+                                            (int)Math.Round(_player.Tileposition.Y));
                 //_tileManager.CurrentTile = _player.CurrentPlayerTile = getBestTile(_player.Tileposition);
                 foreach (var _enemy in _enemies)
                 {
@@ -260,8 +264,10 @@ namespace ComponentTileManager
                                         t.TileWidth * _scale, t.TileHeight * _scale)
                     , Color.White);
             }
+
             if (_player != null)
             {
+                //sp.DrawString(font, "Current Pos " + new Point(_player.CurrentPlayerTile.X, _player.CurrentPlayerTile.Y).ToString(), Cam.CamPos + new Vector2(10, 10), Color.White);
                 _player.Draw(sp, _tileSheet);
                 foreach (var _enemy in _enemies)
                     _enemy.Draw(sp, _tileSheet);
@@ -346,8 +352,6 @@ namespace ComponentTileManager
             int distance = (int)Vector2.DistanceSquared(vfirst, vsecond);
             return distance;
         }
-
-
         public int ManhattanDistance(Tile first, Tile second)
         {
             int abs_X = Math.Abs(first.X - second.X);
