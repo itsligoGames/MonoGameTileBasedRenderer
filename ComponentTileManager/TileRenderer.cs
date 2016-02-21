@@ -1,7 +1,9 @@
 ﻿using AnimatedSprite;
 using Engine.Engines;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using NetworkClient.Network;
 using Sprites;
 using System;
 using System.Collections.Generic;
@@ -27,7 +29,9 @@ namespace ComponentTileManager
         private List<Tile> _path = new List<Tile>();
         private List<SimpleSprite> _pathTiles = new List<SimpleSprite>();
         PlayerWithWeapon _player;
+
         List<SimpleSprite> _collisionSet = new List<SimpleSprite>();
+        List<SimpleSprite> _towers = new List<SimpleSprite>();
         Dictionary<TILETYPES, TileRef> _tileTypeRefs = new Dictionary<TILETYPES, TileRef>();
         List<TILETYPES> _tileTypes = new List<TILETYPES>();
         List<TILETYPES> _nonPassableTiles = new List<TILETYPES>();
@@ -68,7 +72,7 @@ namespace ComponentTileManager
             _nonPassableTiles.Add(TILETYPES.FREE);
             _nonPassableTiles.Add(TILETYPES.GROUND);
             _nonPassableTiles.Add(TILETYPES.BLUE);
-
+            
             string[] backTileNames = { "free", "pavement", "ground", "blue" };
             string[] impassibleTiles = { "free", "ground", "blue" };
 
@@ -84,6 +88,50 @@ namespace ComponentTileManager
             setupEnemies(5, tileWidth, tileHeight);
             Random r = new Random();
             showPathTiles(_path);
+
+            createSpawnPositions();
+            showSpawns();
+        }
+
+        private void showSpawns()
+        {
+            foreach (Tile t in _spawnPositions)
+            {
+                SimpleSprite s = new SimpleSprite(
+                    Game.Content.Load<Texture2D>("tower_03"),
+                            new Vector2(t.X * t.TileWidth, t.Y * t.TileHeight),
+                                new Vector2(t.TileWidth, t.TileHeight));
+                s.Visible = true;
+                _towers.Add(s);
+            }
+
+
+        }
+
+        private void createSpawnPositions()
+        {
+            
+            _spawnPositions.Clear();
+            // Top left most passable Tile
+            _spawnPositions.Add(_tileManager.ActiveLayer.Passable
+                                .OrderBy(t => t.X)
+                                .OrderBy(t => t.Y).First());
+            // Top right most passable tile
+            _spawnPositions.Add(_tileManager.ActiveLayer.Passable
+                .OrderBy(t => t.Y)
+                .OrderByDescending(t => t.X)
+                .First());
+            // Bottom left most passable tile
+            _spawnPositions.Add(_tileManager.ActiveLayer.Passable
+                .OrderByDescending(t =>t.X)
+                .OrderBy(t => t.Y)
+                .First());
+            // Bottom right most 
+            _spawnPositions.Add(_tileManager.ActiveLayer.Passable
+                .OrderByDescending(t => t.X)
+                .OrderByDescending(t => t.Y)
+                .First());
+
         }
 
         private void showPathTiles(List<Tile> _path)
@@ -145,6 +193,7 @@ namespace ComponentTileManager
 
         public override void Update(GameTime gameTime)
         {
+            
             if (_player != null)
             {
                 _player.pixelMove(_collisionSet);
@@ -162,7 +211,8 @@ namespace ComponentTileManager
                 Camera Cam = Game.Services.GetService<Camera>();
                 Cam.follow(_player.PixelPosition,
                  GraphicsDevice.Viewport);
-
+                Network.Update();
+                
 
 
             }
@@ -180,6 +230,45 @@ namespace ComponentTileManager
                 showPathTiles(_path);
             }
             base.Update(gameTime);
+        }
+        public override void Draw(GameTime gameTime)
+        {
+            SpriteBatch sp = Game.Services.GetService<SpriteBatch>();
+            //Texture2D tx = Game.Services.GetService<Texture2D>();
+            SpriteFont font = Game.Services.GetService<SpriteFont>();
+            Camera Cam = Game.Services.GetService<Camera>();
+
+            sp.Begin(SpriteSortMode.Immediate,
+                BlendState.AlphaBlend, null, null, null, null, Cam.CurrentCameraTranslation);
+            foreach (Tile t in _tileManager.ActiveLayer.Tiles)
+            {
+                Vector2 position = new Vector2(t.X * t.TileWidth * _scale, t.Y * t.TileHeight * _scale);
+                sp.Draw(_tileSheet,
+                    new Rectangle(position.ToPoint(), new Point(t.TileWidth * _scale, t.TileHeight * _scale)),
+                    new Rectangle(t.TileRef._sheetPosX * t.TileWidth, t.TileRef._sheetPosY * t.TileHeight,
+                                        t.TileWidth * _scale, t.TileHeight * _scale)
+                    , Color.White);
+            }
+
+            if (_player != null)
+            {
+                //sp.DrawString(font, "Current Pos " + new Point(_player.CurrentPlayerTile.X, _player.CurrentPlayerTile.Y).ToString(), Cam.CamPos + new Vector2(10, 10), Color.White);
+                _player.Draw(sp, _tileSheet);
+                foreach (var _enemy in _enemies)
+                    _enemy.Draw(sp, _tileSheet);
+                //if (_player.MyProjectile != null)
+                //    sp.DrawString(font, "ptp " + _player.Tileposition.ToString(), new Vector2(10, 10), Color.White);
+                //    sp.DrawString(font, "prtp " + _player.MyProjectile.Tileposition.ToString(), new Vector2(10, 30), Color.White);
+                //    sp.DrawString(font, "stp "+ _player.Site.Tileposition.ToString(), new Vector2(10, 60), Color.White);
+            }
+            foreach (var item in _collisionSet)
+                item.draw(sp);
+            foreach (var item in _pathTiles)
+                item.draw(sp);
+            foreach (var tower in _towers)
+                tower.draw(sp);
+            sp.End();
+            base.Draw(gameTime);
         }
 
         // get the best tile based on interscetion for the pusposes of AI movement
@@ -246,48 +335,6 @@ namespace ComponentTileManager
             showPathTiles(_path);
         }
 
-        public override void Draw(GameTime gameTime)
-        {
-            SpriteBatch sp = Game.Services.GetService<SpriteBatch>();
-            //Texture2D tx = Game.Services.GetService<Texture2D>();
-            SpriteFont font = Game.Services.GetService<SpriteFont>();
-            Camera Cam = Game.Services.GetService<Camera>();
-
-            sp.Begin(SpriteSortMode.Immediate,
-                BlendState.AlphaBlend, null, null, null, null, Cam.CurrentCameraTranslation);
-            foreach (Tile t in _tileManager.ActiveLayer.Tiles)
-            {
-                Vector2 position = new Vector2(t.X * t.TileWidth * _scale, t.Y * t.TileHeight * _scale);
-                sp.Draw(_tileSheet,
-                    new Rectangle(position.ToPoint(), new Point(t.TileWidth * _scale, t.TileHeight * _scale)),
-                    new Rectangle(t.TileRef._sheetPosX * t.TileWidth, t.TileRef._sheetPosY * t.TileHeight,
-                                        t.TileWidth * _scale, t.TileHeight * _scale)
-                    , Color.White);
-            }
-
-            if (_player != null)
-            {
-                //sp.DrawString(font, "Current Pos " + new Point(_player.CurrentPlayerTile.X, _player.CurrentPlayerTile.Y).ToString(), Cam.CamPos + new Vector2(10, 10), Color.White);
-                _player.Draw(sp, _tileSheet);
-                foreach (var _enemy in _enemies)
-                    _enemy.Draw(sp, _tileSheet);
-                //if (_player.MyProjectile != null)
-                //    sp.DrawString(font, "ptp " + _player.Tileposition.ToString(), new Vector2(10, 10), Color.White);
-                //    sp.DrawString(font, "prtp " + _player.MyProjectile.Tileposition.ToString(), new Vector2(10, 30), Color.White);
-                //    sp.DrawString(font, "stp "+ _player.Site.Tileposition.ToString(), new Vector2(10, 60), Color.White);
-            }
-            foreach (var item in _collisionSet)
-            {
-                item.draw(sp);
-            }
-            foreach (var item in _pathTiles)
-            {
-                item.draw(sp);
-            }
-
-            sp.End();
-            base.Draw(gameTime);
-        }
 
         public List<Tile> Path(Tile Start, Tile Finish)
         {

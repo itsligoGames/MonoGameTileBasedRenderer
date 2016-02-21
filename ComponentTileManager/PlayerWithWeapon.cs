@@ -11,6 +11,10 @@ using TileManagerNS;
 using Engine.Engines;
 using Microsoft.Xna.Framework.Input.Touch;
 using Sprites;
+using NetworkClient.Network.Player;
+using Microsoft.Xna.Framework.Content;
+using NetworkClient.Network;
+using Lidgren.Network;
 
 namespace AnimatedSprite
 {
@@ -19,7 +23,7 @@ namespace AnimatedSprite
 
         class PlayerWithWeapon : AnimateSheetSprite
         {
-            
+        private GamePlayer networkPlayer;
             private Projectile myProjectile;
             private CrossHair site;
             private Tile currentTilePostion;
@@ -31,13 +35,13 @@ namespace AnimatedSprite
                 get { return PixelPosition + new Vector2(FrameWidth/ 2, FrameHeight/ 2); }
                 
             }
-
-        public Vector2 CentreTilePos
+            public static List<RotatingSprite> otherPlayers = new List<RotatingSprite>();
+            public Vector2 CentreTilePos
         {
             get { return Tileposition + Vector2.One/2; }
         }
 
-        public float speed = 0.1f;
+            public float speed = 0.1f;
             public Vector2 TargetTilePos;
             public STATE MovingState = STATE.STILL;
 
@@ -111,16 +115,34 @@ namespace AnimatedSprite
             }
         }
 
+        internal GamePlayer Player
+        {
+            get
+            {
+                return networkPlayer;
+            }
+
+            set
+            {
+                networkPlayer = value;
+            }
+        }
+
         private Vector2 TileBound;
 
         private Camera _cam;
 
-        public PlayerWithWeapon(Camera cam, Vector2 userPosition, Vector2 tileBounds,
+        private Game _game;
+
+        public PlayerWithWeapon(Game g, Camera cam, Vector2 userPosition, Vector2 tileBounds,
             List<TileRef> InitialSheetRefs, 
                 int frameWidth, int frameHeight, float layerDepth)
             : base(userPosition, InitialSheetRefs, frameWidth, frameHeight, layerDepth)
         {
+            _game = g;
             _cam = cam;
+            ID = Guid.NewGuid().ToString();
+            Network.ClientID = ID;
             _directionFrames.Add(InitialSheetRefs); // Stopped
             _directionFrames.Add(new List<TileRef>()); // LEFT
             _directionFrames.Add(new List<TileRef>()); // RIGHT
@@ -128,7 +150,23 @@ namespace AnimatedSprite
             _directionFrames.Add(new List<TileRef>()); // Down All to be set by setFrameSet
             TileBound = tileBounds;
             Site = new CrossHair(_cam, userPosition, new List<TileRef>() { new TileRef(11, 6, 0)}, frameWidth, frameHeight,2f);
-            }
+            networkPlayer = new GamePlayer(ID, this.Tileposition);
+
+            Network.Config = new NetPeerConfiguration("TankWarServer"); //Same as the Server, so the same name to be used.
+            Network.Client = new NetClient(Network.Config);
+            Network.Client.Start();
+            Network.Client.Connect("127.0.0.1", 14242); //And Connect the Server with IP (string) and host (int) parameters
+            System.Threading.Thread.Sleep(300);
+
+            Network.outmsg = Network.Client.CreateMessage();
+            Network.outmsg.Write("connect");
+            Network.outmsg.Write(ID);
+            Network.outmsg.Write(Tileposition.X);
+            Network.outmsg.Write(Tileposition.Y);
+            Network.Client.SendMessage(Network.outmsg, NetDeliveryMethod.ReliableOrdered);
+            System.Threading.Thread.Sleep(300);
+
+        }
 
         public void loadProjectile(Projectile r)
         {
@@ -189,8 +227,13 @@ namespace AnimatedSprite
                 CurrentFrame = 0;
             }
             Tileposition = Vector2.Clamp(Tileposition, Vector2.Zero, TileBound - Vector2.One);
-            
-            
+            if (Tileposition != PreviousTilePosition)
+            {
+                // Networked Movement
+                GamePlayer.position = Tileposition;
+                GamePlayer.Update();
+            }
+
         }
 
         public void checkforMovement()
@@ -336,15 +379,9 @@ namespace AnimatedSprite
         }
         public override void Update(GameTime gameTime)
         {
-
-            // check for site change
-            //checkforMovement();
             if(Site != null)
                 Site.Update(gameTime);
-            //// Whenever the rocket is still and loaded it follows the player posiion
-            //if (MyProjectile != null && MyProjectile.ProjectileState == Projectile.PROJECTILE_STATE.STILL)
-            //    MyProjectile.Tileposition = this.Tileposition;
-            //// if a roecket is loaded
+
             if (MyProjectile != null 
                 && MyProjectile.ProjectileState == Projectile.PROJECTILE_STATE.STILL)
             {
@@ -357,14 +394,22 @@ namespace AnimatedSprite
             if (MyProjectile != null)
                 MyProjectile.Update(gameTime);
 
-            // Update the Camera with respect to the players new position
-            //Vector2 delta = cam.Pos - this.position;
-            //cam.Pos += delta;
+            // get all the players now in teh game
+            if (GamePlayer.otherPlayers.Count > 0)
+            {
+                var allPlayers = new HashSet<string>(otherPlayers.Select(p => p.ID));
+                // get new players that are not part of this game
+                var newPlayers = GamePlayer.otherPlayers.Where(p => !allPlayers.Contains(GamePlayer.name));
 
-            // Update the players site
-            //Site.Update(gameTime);
-            // call Sprite Update to get it to animated 
-
+                // Add any new players
+                foreach (GamePlayer newplayer in newPlayers)
+                    otherPlayers.Add(new RotatingSprite(GamePlayer.position,
+                                            new List<TileRef>()
+                                            {
+                                          new TileRef(0,2,0)
+                                            },
+                                        FrameWidth, FrameHeight, 1f));
+            }
             base.Update(gameTime);
         }
             
@@ -375,7 +420,8 @@ namespace AnimatedSprite
                 MyProjectile.Draw(spriteBatch, tx);
             if(Site != null)
                 Site.Draw(spriteBatch, tx);
-
+            foreach (RotatingSprite other in otherPlayers)
+                other.Draw(spriteBatch, tx);
         }
 
     }

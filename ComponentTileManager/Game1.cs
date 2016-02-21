@@ -5,7 +5,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using TileManagerNS;
-
+using NetworkClient.Network;
+using Lidgren.Network;
+using Microsoft.Xna.Framework.Content;
 
 namespace ComponentTileManager
 {
@@ -105,6 +107,8 @@ namespace ComponentTileManager
             _tileRenderer.AddPlayer(player);
             new InputEngine(this);
             IsMouseVisible = true;
+
+
             base.Initialize();
         }
 
@@ -119,7 +123,7 @@ namespace ComponentTileManager
             this.Services.AddService<SpriteBatch>(spriteBatch);
             this.Services.AddService<Viewport>(GraphicsDevice.Viewport);
             this.Services.AddService<SpriteFont>(Content.Load<SpriteFont>("DebugFont"));
-
+            this.Services.AddService<ContentManager>(Content);
             // TODO: use this.Content to load your game content here
         }
         private void setupPlayer()
@@ -133,7 +137,7 @@ namespace ComponentTileManager
             playerFrames.Add(new TileRef(20, 0, 0));
             playerFrames.Add(new TileRef(21, 0, 0));
             
-            player = new PlayerWithWeapon(cam, new Vector2(0, 0), new Vector2(tileMap.GetLength(1), tileMap.GetLength(0)),
+            player = new PlayerWithWeapon(this,cam, new Vector2(0, 0), new Vector2(tileMap.GetLength(1), tileMap.GetLength(0)),
                             playerFrames,
                             64, 64, 1.0f); // Default stopped
 

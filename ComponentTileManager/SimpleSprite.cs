@@ -14,7 +14,7 @@ namespace Sprites
         public Rectangle BoundingRect;
         public bool Visible = false;
         public Color tint = Color.White;
-
+        public string ID;
         // Constructor epects to see a loaded Texture
         // and a start position
         public SimpleSprite(Texture2D spriteImage,

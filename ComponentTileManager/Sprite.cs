@@ -23,7 +23,7 @@ namespace AnimatedSprite
             get { return visible; }
             set { visible = value; }
         }
-
+        public string ID { get; set; } // For networking id
         private Vector2 _tileposition;
         public Vector2 Tileposition
         {
@@ -99,6 +99,7 @@ namespace AnimatedSprite
 
         public AnimateSheetSprite(Vector2 userPosition, List<TileRef> sheetRefs, int frameWidth, int frameHeight, float layerDepth)
         {
+            ID = Guid.NewGuid().ToString();
             spriteDepth = layerDepth;
             Tileposition = userPosition;
             visible = true;
