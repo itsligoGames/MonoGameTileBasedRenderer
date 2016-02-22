@@ -320,7 +320,7 @@ namespace ComponentTileManager
                 // furthest gets pushed first
                 foreach (var node in NextNearestNeighbour)
                 {
-                    Tile Nextnode = (from n in Neighbours
+                    Tile Nextnode = (from n in NewNeighbours
                                      where n.X == node.X && n.Y == node.Y
                                      select n)
                              .FirstOrDefault();
@@ -328,12 +328,9 @@ namespace ComponentTileManager
                         frontier.Push(Nextnode);
                 }
                 // Choose the next Neighbour as the shortest distance at the head of the stack
-                Tile Next = frontier.Pop();
-                if (Next == null) return null;
-                //else if (absoluteDistance(Next, Finish) <= 0)
-                //        { Current = Finish; if(!visited.Contains(Finish)) visited.Add(Finish); }
-                else if (!visited.Contains(Next, compare)) Current = Next;
-                
+                if (frontier.Count > 0)
+                     Current = frontier.Pop();
+                else return null;
 
             }
             visited.Add(Finish);
