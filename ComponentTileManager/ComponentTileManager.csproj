@@ -62,8 +62,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\Collison.bmp" />
+    <Content Include="Content\Collison.png" />
     <Content Include="Content\Tiles\tank tiles 64 x 64.png" />
+    <Content Include="Content\tower_03.png" />
     <Content Include="Icon.ico" />
   </ItemGroup>
   <ItemGroup>

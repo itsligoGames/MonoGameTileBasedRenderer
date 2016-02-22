@@ -8,28 +8,28 @@
     </TypeIdentifier>
   </Class>
   <Class Name="TileManagerNS.TileManager">
-    <Position X="17.25" Y="0.5" Width="1.5" />
+    <Position X="15.5" Y="1.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAgAAAABAAACAAAACAAEAAAgAIEAUAQ=</HashCode>
       <FileName>TileManager.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="TileManagerNS.Tile">
-    <Position X="13.25" Y="0.5" Width="1.5" />
+    <Position X="19" Y="1.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AABCAAAIAAQAAAAAgCBAACACAAEAAAAAABAAAQgAYBA=</HashCode>
       <FileName>TileManager.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="TileManagerNS.TileLayer">
-    <Position X="15" Y="0.5" Width="1.5" />
+    <Position X="17.25" Y="1.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>gAJABACAQABABAAAASAEACAAAAAABFIAAEAIAQAQkBQ=</HashCode>
       <FileName>TileManager.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="TileManagerNS.TileRef">
-    <Position X="17.25" Y="4.25" Width="1.5" />
+    <Position X="13.75" Y="1.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAGgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>TileRef.cs</FileName>
@@ -95,7 +95,7 @@
       </Class>
     </NestedTypes>
     <TypeIdentifier>
-      <HashCode>MBQAAAAAAQACIgMACCAACgIEAgCgAgAAAAgggAAQECA=</HashCode>
+      <HashCode>IBQAAAEAAQACIgMACCAADgIEAgCgggAAAAgggAgQEGA=</HashCode>
       <FileName>TileRenderer.cs</FileName>
     </TypeIdentifier>
   </Class>

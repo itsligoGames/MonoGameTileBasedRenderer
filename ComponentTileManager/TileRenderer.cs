@@ -28,6 +28,7 @@ namespace ComponentTileManager
         private List<SimpleSprite> _pathTiles = new List<SimpleSprite>();
         PlayerWithWeapon _player;
         List<SimpleSprite> _collisionSet = new List<SimpleSprite>();
+        List<SimpleSprite> _towers = new List<SimpleSprite>();
         Dictionary<TILETYPES, TileRef> _tileTypeRefs = new Dictionary<TILETYPES, TileRef>();
         List<TILETYPES> _tileTypes = new List<TILETYPES>();
         List<TILETYPES> _nonPassableTiles = new List<TILETYPES>();
@@ -82,8 +83,50 @@ namespace ComponentTileManager
             // Create an enemy object that will rotate towards the player
             //Tile enemyTile = _tileManager.ActiveLayer.Impassable.First();
             setupEnemies(5, tileWidth, tileHeight);
-            Random r = new Random();
-            showPathTiles(_path);
+            //showPathTiles(_path);
+            createSpawnPositions();
+            showSpawns();
+        }
+
+        private void showSpawns()
+        {
+            foreach (Tile t in _spawnPositions)
+            {
+                SimpleSprite s = new SimpleSprite(
+                    Game.Content.Load<Texture2D>("tower_03"),
+                            new Vector2(t.X * t.TileWidth, t.Y * t.TileHeight),
+                                new Vector2(t.TileWidth, t.TileHeight));
+                s.Visible = true;
+                _towers.Add(s);
+            }
+
+
+        }
+
+        private void createSpawnPositions()
+        {
+
+            _spawnPositions.Clear();
+            // Top left most passable Tile
+            _spawnPositions.Add(_tileManager.ActiveLayer.Passable
+                                .OrderBy(t => t.X)
+                                .OrderBy(t => t.Y).First());
+            // Top right most passable tile
+            _spawnPositions.Add(_tileManager.ActiveLayer.Passable
+                .OrderBy(t => t.Y)
+                .OrderByDescending(t => t.X)
+                .First());
+            // Bottom left most passable tile
+            _spawnPositions.Add(_tileManager.ActiveLayer.Passable
+                .OrderByDescending(t => t.X)
+                .OrderBy(t => t.Y)
+                .First());
+            // Bottom right most 
+            _spawnPositions.Add(_tileManager.ActiveLayer.Passable
+                .OrderByDescending(t => t.X)
+                .OrderByDescending(t => t.Y)
+                .First());
+
         }
 
         private void showPathTiles(List<Tile> _path)
@@ -133,14 +176,10 @@ namespace ComponentTileManager
         public void setupCollisionMask()
         {
             foreach (Tile t in _tileManager.ActiveLayer.Impassable)
-            {
                 _collisionSet.Add(new SimpleSprite(
                     Game.Content.Load<Texture2D>("Collison"),
                             new Vector2(t.X * t.TileWidth, t.Y * t.TileHeight),
                                 new Vector2(t.TileWidth, t.TileHeight)));
-
-            }
-
         }
 
         public override void Update(GameTime gameTime)
@@ -170,48 +209,12 @@ namespace ComponentTileManager
             {
                 _pathTiles = new List<SimpleSprite>();
                 Random r = new Random();
-                Tile start = _tileManager.ActiveLayer.Passable[5];
-                //RandomPassableTile();
-                //Point playerPos = _player.Tileposition.ToPoint();
-                //Tile finish = _tileManager.ActiveLayer.Passable
-                //    .Where( t => t.X == playerPos.X && t.Y == playerPos.Y).FirstOrDefault() ;
+                Tile start = _spawnPositions[r.Next(3)];
                 Tile finish = _player.CurrentPlayerTile;
                 _path = Path(start, finish);
                 showPathTiles(_path);
             }
             base.Update(gameTime);
-        }
-
-        // get the best tile based on interscetion for the pusposes of AI movement
-        // in the underlying structure
-        private Tile getBestTile(Vector2 tileposition)
-        {
-            List<Tile> surrounding = _tileManager.ActiveLayer.getSurroundingPassableTiles(_player.CurrentPlayerTile);
-            Tile first = surrounding.FirstOrDefault();
-            // no surrounding tiles just return the current player tile
-            if (first == null) return _player.CurrentPlayerTile;
-            Rectangle playerRect = _player.DrawRectangle;
-            Rectangle overlap;
-            Rectangle tileRect = new Rectangle(first.X* first.TileWidth, first.Y* first.TileHeight, first.TileWidth, first.TileHeight);
-            Rectangle.Intersect(ref playerRect,
-                                   ref tileRect, out overlap);
-            // The current largest overlapping area is the first largest we sample
-            Rectangle currentLargestOverlap = overlap;
-            Tile newPlayerTilePosition = _player.CurrentPlayerTile;
-            foreach(Tile t in surrounding)
-            {
-                // calculate the tile rectangle in pixels
-                tileRect = new Rectangle(t.X * t.TileWidth, t.Y * t.TileHeight, t.TileWidth, t.TileHeight);
-                // Get the overlapping area
-                Rectangle.Intersect(ref playerRect,
-                                       ref tileRect, out overlap);
-                // test overlapping area if it's bigger than previous then we take that tile
-                if (overlap.Size.X > currentLargestOverlap.Size.X && overlap.Size.Y > currentLargestOverlap.Size.Y)
-                    newPlayerTilePosition = t;
-            }
-
-            return newPlayerTilePosition;
-
         }
 
         public Tile RandomPassableTile()
@@ -241,9 +244,9 @@ namespace ComponentTileManager
             _player = p;
             p.CurrentPlayerTile = _tileManager.CurrentTile;
             Tile Finish = _player.CurrentPlayerTile = _tileManager.ActiveLayer.getPassableTileAt((int)_player.Tileposition.X, (int)_player.Tileposition.Y);
-            Tile Start = RandomPassableTile();
-            _path = Path(Start, Finish);
-            showPathTiles(_path);
+            //Tile Start = RandomPassableTile();
+            //_path = Path(Start, Finish);
+            //showPathTiles(_path);
         }
 
         public override void Draw(GameTime gameTime)
@@ -277,14 +280,11 @@ namespace ComponentTileManager
                 //    sp.DrawString(font, "stp "+ _player.Site.Tileposition.ToString(), new Vector2(10, 60), Color.White);
             }
             foreach (var item in _collisionSet)
-            {
                 item.draw(sp);
-            }
             foreach (var item in _pathTiles)
-            {
                 item.draw(sp);
-            }
-
+            foreach (var tower in _towers)
+                tower.draw(sp);
             sp.End();
             base.Draw(gameTime);
         }
