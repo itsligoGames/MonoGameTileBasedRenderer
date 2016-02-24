@@ -296,10 +296,8 @@ namespace ComponentTileManager
             TileComparer compare = new TileComparer();
             Tile Current = Start;
             List<Tile> passable = _tileManager.ActiveLayer.Passable;
-            List<Tile> visited = new List<Tile>();
-
+            List<Tile> visited = new List<Tile>();  
             Stack<Tile> frontier = new Stack<Tile>();
-
             frontier.Push(Start);
             int best = euclideanDistance(Start, Finish);
             while (Current != null && Current != Finish)
@@ -312,7 +310,7 @@ namespace ComponentTileManager
                 // Get best neighbours in decreasing order as they are about to 
                 // pushed onto the frontier
                 var NextNearestNeighbour = NewNeighbours
-                    .Select(nn => new { nn.X, nn.Y, Distance = euclideanDistance(nn, Finish) })
+                    .Select(nn => new { nn.X, nn.Y, Distance = ManhattanDistance(nn, Finish) })
                     .OrderByDescending(d => d.Distance)
                     .ToList();
 
@@ -353,7 +351,7 @@ namespace ComponentTileManager
         {
             int abs_X = Math.Abs(first.X - second.X);
             int abs_Y = Math.Abs(first.Y - second.Y);
-            return Math.Abs(abs_X - abs_Y);
+            return Math.Abs(abs_X + abs_Y);
         }
 
         public class TileComparer : IEqualityComparer<Tile>
