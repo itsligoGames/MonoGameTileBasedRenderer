@@ -33,10 +33,13 @@ namespace ComponentTileManager
         List<TILETYPES> _tileTypes = new List<TILETYPES>();
         List<TILETYPES> _nonPassableTiles = new List<TILETYPES>();
         Vector2 TileTransform;
-        List<RotatingSprite> _enemies = new List<RotatingSprite>();
+        List<Sentry> _enemies = new List<Sentry>();
         List<Tile> _spawnPositions = new List<Tile>();
         List<Color> _spawnColor = new List<Color> { Color.Blue, Color.White, Color.Red, Color.RosyBrown };
-        Texture2D _rectTx;
+        Texture2D _txShowRectangle;
+
+
+
         public TileManager TileManager
         {
             get
@@ -54,14 +57,16 @@ namespace ComponentTileManager
         {
             game.Components.Add(this);
             _tileManager = new TileManager();
+            // Tile sheet that all sprites are taken from
             _tileSheet = game.Content.Load<Texture2D>(@"Tiles\tank tiles 64 x 64");
             _font = game.Content.Load<SpriteFont>("message");
-            _rectTx = Game.Content.Load<Texture2D>("Collison");
-
+            // texture to show collision fields for enemies
+            _txShowRectangle = game.Content.Load<Texture2D>("Collison");
             _tileRefs.Add(new TileRef(4, 2, 0));
             _tileRefs.Add(new TileRef(3, 3, 1));
             _tileRefs.Add(new TileRef(6, 3, 2));
-            _tileRefs.Add(new TileRef(6, 4, 3));
+            _tileRefs.Add(new TileRef(6, 2, 3));
+            _tileRefs.Add(new TileRef(0, 2, 4));
             TileTransform = new Vector2(tileWidth, tileHeight);
             // alternate representation for tile layer references
             _tileTypeRefs.Add(TILETYPES.FREE, new TileRef(4, 2, 0));
@@ -72,7 +77,7 @@ namespace ComponentTileManager
             _nonPassableTiles.Add(TILETYPES.GROUND);
             _nonPassableTiles.Add(TILETYPES.BLUE);
 
-            string[] backTileNames = { "free", "pavement", "ground", "blue" };
+            string[] backTileNames = { "free", "pavement", "ground", "blue", "home" };
             string[] impassibleTiles = { "free", "ground", "blue" };
 
             _tileManager.addLayer("background",
@@ -94,7 +99,7 @@ namespace ComponentTileManager
         {
             foreach (Tile t in _spawnPositions)
             {
-                SimpleSprite s = new SimpleSprite(
+                SimpleSprite s = new SimpleSprite(Game.Content.Load<SpriteFont>("DebugFont"),
                     Game.Content.Load<Texture2D>("tower_03"),
                             new Vector2(t.X * t.TileWidth, t.Y * t.TileHeight),
                                 new Vector2(t.TileWidth, t.TileHeight));
@@ -120,8 +125,8 @@ namespace ComponentTileManager
                 .First());
             // Bottom left most passable tile
             _spawnPositions.Add(_tileManager.ActiveLayer.Passable
-                .OrderByDescending(t => t.X)
-                .OrderBy(t => t.Y)
+                .OrderBy(t => t.X)
+                .OrderByDescending(t => t.Y)
                 .First());
             // Bottom right most 
             _spawnPositions.Add(_tileManager.ActiveLayer.Passable
@@ -135,7 +140,7 @@ namespace ComponentTileManager
         {
             foreach (Tile t in _path)
             {
-                SimpleSprite s = new SimpleSprite(
+                SimpleSprite s = new SimpleSprite(Game.Content.Load<SpriteFont>("DebugFont"),
                     Game.Content.Load<Texture2D>("Collison"),
                             new Vector2(t.X * t.TileWidth, t.Y * t.TileHeight),
                                 new Vector2(t.TileWidth, t.TileHeight));
@@ -146,10 +151,11 @@ namespace ComponentTileManager
 
         public void setupEnemies(int EnemyCount, int tileWidth, int tileHeight)
         {
+            _enemies.Clear();
             // use linq queries on the impassible tiles to choose random locations for enemies
             // First query introduce a random guid into a sub set of locations of impassible tiles
             var enemyPlaces = _tileManager.ActiveLayer.Impassable
-                                    //.Where(chosen => chosen.X > 5 && chosen.Y > 5)
+                                    .Where(chosen => chosen.TileName == "blue")
                                     .Select(subset => new { subset.X, subset.Y, gid = Guid.NewGuid() });
                                     
             // order by the guid and take count positions
@@ -167,11 +173,34 @@ namespace ComponentTileManager
                                          select enemyPos).ToList();
             foreach (Tile t in enemyPositions)
             {
-                
-                _enemies.Add(new RotatingSprite(new Vector2(t.X, t.Y),
+                _enemies.Add(new Sentry(new Vector2(t.X, t.Y),
                     new List<TileRef>() {
                     new TileRef(17,7,0)
                          }, tileWidth, tileHeight, 1f));
+            }
+            loadEnemyProjectiles();
+
+        }
+
+        public void loadEnemyProjectiles()
+        {
+            // Foreach enemy load a projectile
+            foreach (var e in _enemies)
+            {
+                Projectile p = new Projectile(e.Tileposition,
+                new List<TileRef>() { new TileRef(3,0,0),
+                                                new TileRef(4,0,0),
+                                                new TileRef(5,0,0),
+                                                new TileRef(6,0,0)},
+                new List<TileRef>() { new TileRef(0,0,0),
+                                                new TileRef(1,0,0),
+                                                new TileRef(2,0,0)
+                                        },
+                e.FrameWidth, e.FrameHeight, 1.5f);
+                e.loadProjectile(p);
+                e.Health = 100;
+                e.Hbar = new Helpers.HealthBar(Game.GraphicsDevice, e.PixelPosition + new Vector2(-10, -20));
+
             }
         }
 
@@ -179,7 +208,7 @@ namespace ComponentTileManager
         public void setupCollisionMask()
         {
             foreach (Tile t in _tileManager.ActiveLayer.Impassable)
-                _collisionSet.Add(new SimpleSprite(
+                _collisionSet.Add(new SimpleSprite(Game.Content.Load<SpriteFont>("DebugFont"),
                     Game.Content.Load<Texture2D>("Collison"),
                             new Vector2(t.X * t.TileWidth, t.Y * t.TileHeight),
                                 new Vector2(t.TileWidth, t.TileHeight)));
@@ -198,15 +227,28 @@ namespace ComponentTileManager
                 //_tileManager.CurrentTile = _player.CurrentPlayerTile = getBestTile(_player.Tileposition);
                 foreach (var _enemy in _enemies)
                 {
+                    // Test if there is an explosion on the enemy from the player projectile
+                    _player.HitTest(_enemy);
                     _enemy.follow(_player);
                     _enemy.Update(gameTime);
+                    // Test if there is an explosion on the enemy from the player projectile
+                    _enemy.HitTest(_player);
                 }
+                // remove destroyed enemies
+                var dead = _enemies.Where(s => s.Health <= 0).ToList();
+                foreach (Sentry s in dead)
+                    _enemies.Remove(s);
+
+                if (_player.Health <= 0)
+                { 
+                    AddPlayer(_player); // resets the player
+                    setupEnemies(5, _player.FrameWidth, _player.FrameHeight);
+                }
+
+
                 Camera Cam = Game.Services.GetService<Camera>();
                 Cam.follow(_player.PixelPosition,
                  GraphicsDevice.Viewport);
-
-
-
             }
             if (InputEngine.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R))
             {
@@ -244,9 +286,18 @@ namespace ComponentTileManager
 
         public void AddPlayer(PlayerWithWeapon p)
         {
+            // Add the player and set its current Tile to be the home Tile and it's position to match the home Tile
             _player = p;
-            p.CurrentPlayerTile = _tileManager.CurrentTile;
-            Tile Finish = _player.CurrentPlayerTile = _tileManager.ActiveLayer.getPassableTileAt((int)_player.Tileposition.X, (int)_player.Tileposition.Y);
+            _player.CurrentPlayerTile = _tileManager.ActiveLayer.Passable.Where(t => t.TileName == "home").FirstOrDefault();
+            if (_player.CurrentPlayerTile != null)
+            {
+                _tileManager.CurrentTile = _player.CurrentPlayerTile;
+                _player.Tileposition = new Vector2(_player.CurrentPlayerTile.X, _player.CurrentPlayerTile.Y);
+            }
+            p.Health = 100;
+            p.Hbar = new Helpers.HealthBar(Game.GraphicsDevice, p.PixelPosition + new Vector2(-10, -10));
+            
+            //Tile Finish = _player.CurrentPlayerTile = _tileManager.ActiveLayer.getPassableTileAt((int)_player.Tileposition.X, (int)_player.Tileposition.Y);
             //Tile Start = RandomPassableTile();
             //_path = Path(Start, Finish);
             //showPathTiles(_path);
@@ -273,11 +324,12 @@ namespace ComponentTileManager
 
             if (_player != null)
             {
-                //sp.DrawString(font, "Current Pos " + new Point(_player.CurrentPlayerTile.X, _player.CurrentPlayerTile.Y).ToString(), Cam.CamPos + new Vector2(10, 10), Color.White);
+                sp.DrawString(font,  "Site pos " + _player.Site.PixelPosition.ToString(), _player.Site.PixelPosition, Color.White);
                 _player.Draw(sp, _tileSheet);
+
                 foreach (var _enemy in _enemies)
                 {
-                    sp.Draw(_rectTx, _enemy.Range, new Color(0, 0, 0, 128));
+                    sp.Draw(_txShowRectangle, _enemy.Range, new Color(0, 0, 0, 128));
                     _enemy.Draw(sp, _tileSheet);
                 }
                 //if (_player.MyProjectile != null)
@@ -301,13 +353,11 @@ namespace ComponentTileManager
                 return new List<Tile> { Start, Finish };
             TileComparer compare = new TileComparer();
             Tile Current = Start;
-            //List<Tile> passable = _tileManager.ActiveLayer.Passable;
-            List<Tile> visited = new List<Tile>();
-
+            List<Tile> passable = _tileManager.ActiveLayer.Passable;
+            List<Tile> visited = new List<Tile>();  
             Stack<Tile> frontier = new Stack<Tile>();
-
             frontier.Push(Start);
-            //int best = euclideanDistance(Start, Finish);
+            int best = euclideanDistance(Start, Finish);
             while (Current != null && Current != Finish)
             {
                 visited.Add(Current);
@@ -318,7 +368,7 @@ namespace ComponentTileManager
                 // Get best neighbours in decreasing order as they are about to 
                 // pushed onto the frontier
                 var NextNearestNeighbour = NewNeighbours
-                    .Select(nn => new { nn.X, nn.Y, Distance = euclideanDistance(nn, Finish) })
+                    .Select(nn => new { nn.X, nn.Y, Distance = ManhattanDistance(nn, Finish) })
                     .OrderByDescending(d => d.Distance)
                     .ToList();
 
@@ -326,7 +376,7 @@ namespace ComponentTileManager
                 // furthest gets pushed first
                 foreach (var node in NextNearestNeighbour)
                 {
-                    Tile Nextnode = (from n in Neighbours
+                    Tile Nextnode = (from n in NewNeighbours
                                      where n.X == node.X && n.Y == node.Y
                                      select n)
                              .FirstOrDefault();
@@ -334,12 +384,9 @@ namespace ComponentTileManager
                         frontier.Push(Nextnode);
                 }
                 // Choose the next Neighbour as the shortest distance at the head of the stack
-                Tile Next = frontier.Pop();
-                if (Next == null) return null;
-                //else if (absoluteDistance(Next, Finish) <= 0)
-                //        { Current = Finish; if(!visited.Contains(Finish)) visited.Add(Finish); }
-                else if (!visited.Contains(Next, compare)) Current = Next;
-                
+                if (frontier.Count > 0)
+                     Current = frontier.Pop();
+                else return null;
 
             }
             visited.Add(Finish);
@@ -362,7 +409,7 @@ namespace ComponentTileManager
         {
             int abs_X = Math.Abs(first.X - second.X);
             int abs_Y = Math.Abs(first.Y - second.Y);
-            return Math.Abs(abs_X - abs_Y);
+            return Math.Abs(abs_X + abs_Y);
         }
 
         public class TileComparer : IEqualityComparer<Tile>
@@ -381,5 +428,6 @@ namespace ComponentTileManager
 
             }
         }
+
     }
 }

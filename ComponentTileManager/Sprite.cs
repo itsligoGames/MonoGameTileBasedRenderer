@@ -18,12 +18,14 @@ namespace AnimatedSprite
         protected float angleOfRotation;
         protected float spriteDepth = 1f;
         private float scale = 1f;
+
+        private Rectangle boundingRectangle;
+
         public bool Visible
         {
             get { return visible; }
             set { visible = value; }
         }
-        Rectangle _boundingRect;
 
         private Vector2 _tileposition;
         public Vector2 Tileposition
@@ -95,16 +97,17 @@ namespace AnimatedSprite
             }
         }
 
-        public Rectangle BoundingRect
+        public Rectangle BoundingRectangle
         {
             get
             {
-                return new Rectangle(PixelPosition.ToPoint(), new Point(FrameWidth,FrameHeight));
+                return new Rectangle(PixelPosition.ToPoint(),
+                    new Point(FrameWidth , FrameHeight ));
             }
 
             set
             {
-                _boundingRect = value;
+                boundingRectangle = value;
             }
         }
 

@@ -14,12 +14,15 @@ namespace Sprites
         public Rectangle BoundingRect;
         public bool Visible = false;
         public Color tint = Color.White;
+        public SpriteFont _font;
 
         // Constructor epects to see a loaded Texture
         // and a start position
-        public SimpleSprite(Texture2D spriteImage,
+        public SimpleSprite(SpriteFont font, Texture2D spriteImage,
                             Vector2 startPosition, Vector2 Size)
         {
+            //
+            _font = font;
             // Take a copy of the texture passed down
             Image = spriteImage;
             // Take a copy of the start position
@@ -32,7 +35,10 @@ namespace Sprites
         public void draw(SpriteBatch sp)
         {
             if (Image != null && Visible)
+            {
+                sp.DrawString(_font, Position.ToString(), Position, Color.White);
                 sp.Draw(Image, BoundingRect, tint);
+            }
         }
 
         public void Move(Vector2 delta)
