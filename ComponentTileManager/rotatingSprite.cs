@@ -12,6 +12,26 @@ namespace AnimatedSprite
 {
     public class RotatingSprite : AnimateSheetSprite
     {
+        Projectile _p;
+        int _rangeDistance = 7;
+        Rectangle _range;
+        int Health = 100;
+
+        public Rectangle Range
+        {
+            get
+            {
+                return new Rectangle(PixelPosition.ToPoint() - new Point(FrameWidth * _rangeDistance / 2, FrameHeight * _rangeDistance / 2) ,
+                    new Point(FrameWidth * _rangeDistance,
+                                FrameHeight * _rangeDistance));
+            }
+
+            set
+            {
+                _range = value;
+            }
+        }
+
         public RotatingSprite(Vector2 userPosition, List<TileRef> sheetRefs, int frameWidth, int frameHeight, float layerDepth)
             : base(userPosition, sheetRefs, frameWidth, frameHeight, layerDepth)
         {
@@ -20,8 +40,8 @@ namespace AnimatedSprite
 
         public void follow(AnimateSheetSprite followed)
         {
-            //MouseState state = Mouse.GetState();
-            angleOfRotation = TurnToFace(followed.PixelPosition, PixelPosition, angleOfRotation, 0.01f);
+            if(followed.BoundingRect.Intersects(Range))
+                angleOfRotation = TurnToFace(followed.PixelPosition, PixelPosition, angleOfRotation, 0.01f);
         }
 
         protected static float TurnToFace(Vector2 position, Vector2 faceThis,

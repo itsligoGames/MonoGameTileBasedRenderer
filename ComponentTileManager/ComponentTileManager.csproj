@@ -48,6 +48,7 @@
     <Compile Include="Projectile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="rotatingSprite.cs" />
+    <Compile Include="SentryEnemy.cs" />
     <Compile Include="SimpleSprite.cs" />
     <Compile Include="Sprite.cs" />
     <Compile Include="TileManager.cs" />
@@ -62,6 +63,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\ShowRange.png" />
     <Content Include="Content\Collison.png" />
     <Content Include="Content\Tiles\tank tiles 64 x 64.png" />
     <Content Include="Content\tower_03.png" />

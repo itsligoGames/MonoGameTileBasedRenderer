@@ -23,6 +23,7 @@ namespace AnimatedSprite
             get { return visible; }
             set { visible = value; }
         }
+        Rectangle _boundingRect;
 
         private Vector2 _tileposition;
         public Vector2 Tileposition
@@ -91,6 +92,19 @@ namespace AnimatedSprite
             set
             {
                 scale = value;
+            }
+        }
+
+        public Rectangle BoundingRect
+        {
+            get
+            {
+                return new Rectangle(PixelPosition.ToPoint(), new Point(FrameWidth,FrameHeight));
+            }
+
+            set
+            {
+                _boundingRect = value;
             }
         }
 

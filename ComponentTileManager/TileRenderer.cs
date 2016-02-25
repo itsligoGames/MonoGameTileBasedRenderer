@@ -36,7 +36,7 @@ namespace ComponentTileManager
         List<RotatingSprite> _enemies = new List<RotatingSprite>();
         List<Tile> _spawnPositions = new List<Tile>();
         List<Color> _spawnColor = new List<Color> { Color.Blue, Color.White, Color.Red, Color.RosyBrown };
-
+        Texture2D _rectTx;
         public TileManager TileManager
         {
             get
@@ -56,6 +56,8 @@ namespace ComponentTileManager
             _tileManager = new TileManager();
             _tileSheet = game.Content.Load<Texture2D>(@"Tiles\tank tiles 64 x 64");
             _font = game.Content.Load<SpriteFont>("message");
+            _rectTx = Game.Content.Load<Texture2D>("Collison");
+
             _tileRefs.Add(new TileRef(4, 2, 0));
             _tileRefs.Add(new TileRef(3, 3, 1));
             _tileRefs.Add(new TileRef(6, 3, 2));
@@ -146,8 +148,8 @@ namespace ComponentTileManager
         {
             // use linq queries on the impassible tiles to choose random locations for enemies
             // First query introduce a random guid into a sub set of locations of impassible tiles
-            var enemyPlaces = _tileManager.ActiveLayer.Passable
-                                    .Where(chosen => chosen.X > 5 && chosen.Y > 5)
+            var enemyPlaces = _tileManager.ActiveLayer.Impassable
+                                    //.Where(chosen => chosen.X > 5 && chosen.Y > 5)
                                     .Select(subset => new { subset.X, subset.Y, gid = Guid.NewGuid() });
                                     
             // order by the guid and take count positions
@@ -159,12 +161,13 @@ namespace ComponentTileManager
             // Do a join on the resulting 10 random places and the original impassible tiles 
             // to get the actual tile locations
 
-            List<Tile> enemyPositions = (from enemyPos in _tileManager.ActiveLayer.Passable
+            List<Tile> enemyPositions = (from enemyPos in _tileManager.ActiveLayer.Impassable
                                          join places in randomEnemyPlaces
                                          on new { enemyPos.X, enemyPos.Y } equals new { places.X, places.Y }
                                          select enemyPos).ToList();
             foreach (Tile t in enemyPositions)
             {
+                
                 _enemies.Add(new RotatingSprite(new Vector2(t.X, t.Y),
                     new List<TileRef>() {
                     new TileRef(17,7,0)
@@ -273,7 +276,10 @@ namespace ComponentTileManager
                 //sp.DrawString(font, "Current Pos " + new Point(_player.CurrentPlayerTile.X, _player.CurrentPlayerTile.Y).ToString(), Cam.CamPos + new Vector2(10, 10), Color.White);
                 _player.Draw(sp, _tileSheet);
                 foreach (var _enemy in _enemies)
+                {
+                    sp.Draw(_rectTx, _enemy.Range, new Color(0, 0, 0, 128));
                     _enemy.Draw(sp, _tileSheet);
+                }
                 //if (_player.MyProjectile != null)
                 //    sp.DrawString(font, "ptp " + _player.Tileposition.ToString(), new Vector2(10, 10), Color.White);
                 //    sp.DrawString(font, "prtp " + _player.MyProjectile.Tileposition.ToString(), new Vector2(10, 30), Color.White);
@@ -295,13 +301,13 @@ namespace ComponentTileManager
                 return new List<Tile> { Start, Finish };
             TileComparer compare = new TileComparer();
             Tile Current = Start;
-            List<Tile> passable = _tileManager.ActiveLayer.Passable;
+            //List<Tile> passable = _tileManager.ActiveLayer.Passable;
             List<Tile> visited = new List<Tile>();
 
             Stack<Tile> frontier = new Stack<Tile>();
 
             frontier.Push(Start);
-            int best = euclideanDistance(Start, Finish);
+            //int best = euclideanDistance(Start, Finish);
             while (Current != null && Current != Finish)
             {
                 visited.Add(Current);
