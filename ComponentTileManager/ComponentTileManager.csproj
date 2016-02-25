@@ -40,6 +40,7 @@
   <ItemGroup>
     <Compile Include="Camera.cs" />
     <Compile Include="CrossHair.cs" />
+    <Compile Include="FollowingEnemy.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="HealthBar.cs" />
     <Compile Include="InputEngine.cs" />
@@ -52,6 +53,7 @@
     <Compile Include="Sentry.cs" />
     <Compile Include="SimpleSprite.cs" />
     <Compile Include="Sprite.cs" />
+    <Compile Include="TileComparer.cs" />
     <Compile Include="TileManager.cs" />
     <Compile Include="TileRef.cs" />
     <Compile Include="TileRenderer.cs" />

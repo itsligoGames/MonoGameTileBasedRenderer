@@ -412,22 +412,7 @@ namespace ComponentTileManager
             return Math.Abs(abs_X + abs_Y);
         }
 
-        public class TileComparer : IEqualityComparer<Tile>
-
-        {
-            public int GetHashCode(Tile t)
-            {
-                return t.GetHashCode();
-            }
-
-            public bool Equals(Tile tileA, Tile tileB)
-            {
-                if (tileA.X == tileB.X && tileA.Y == tileB.Y)
-                    return true;
-                else return false;
-
-            }
-        }
+       
 
     }
 }
