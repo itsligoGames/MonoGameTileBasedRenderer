@@ -9,18 +9,18 @@ using TileManagerNS;
 
 namespace AnimatedSprite
 {
-    class Projectile : RotatingSprite
+    public class Projectile : RotatingSprite
     {
 
             public enum PROJECTILE_STATE { STILL, FIRING, EXPOLODING };
             PROJECTILE_STATE projectileState = PROJECTILE_STATE.STILL;
-            protected float RocketVelocity = 4.0f;
+            protected float RocketVelocity = 20.0f;
             protected float range = 1f;
             Vector2 textureCenter;
             Vector2 Target;
             AnimateSheetSprite explosion;
             float ExplosionTimer = 0;
-            float ExplosionVisibleLimit = 1000;
+            float ExplosionVisibleLimit = 100;
             Vector2 StartPosition;
            
 
@@ -52,7 +52,7 @@ namespace AnimatedSprite
                     // Velocity
                     case PROJECTILE_STATE.FIRING:
                         this.Visible = true;                       
-                        Tileposition = Vector2.Lerp(Tileposition, Target, 0.02f * RocketVelocity);
+                        Tileposition = Vector2.Lerp(Tileposition, Target, 0.01f * RocketVelocity);
                          // rotate towards the Target
                         this.angleOfRotation = TurnToFace(Tileposition,
                                                 Target, angleOfRotation, 1f);
@@ -75,7 +75,8 @@ namespace AnimatedSprite
                 {
                     explosion.Visible = false;
                     ExplosionTimer = 0;
-                projectileState = PROJECTILE_STATE.STILL;
+                    projectileState = PROJECTILE_STATE.STILL;
+                    Tileposition = StartPosition;
                 }
 
                 base.Update(gametime);

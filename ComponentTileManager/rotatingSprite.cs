@@ -7,21 +7,81 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using TileManagerNS;
+using Helpers;
 
 namespace AnimatedSprite
 {
     public class RotatingSprite : AnimateSheetSprite
     {
+
+        int health = 100;
+        private Rectangle range;
+        private int tileRangeDistance = 4;
+        float rotationSpeed = .5f;
+        public Rectangle Range
+        {
+            get
+            {
+                return new Rectangle((PixelPosition + origin).ToPoint()  - new Point(FrameWidth * tileRangeDistance/2, FrameHeight * tileRangeDistance/2),
+                    new Point(FrameWidth * tileRangeDistance, FrameHeight * tileRangeDistance));
+            }
+
+            set
+            {
+                range = value;
+            }
+        }
+
+        public HealthBar Hbar
+        {
+            get
+            {
+                return hbar;
+            }
+
+            set
+            {
+                hbar = value;
+            }
+        }
+
+        public int Health
+        {
+            get
+            {
+                return health;
+            }
+
+            set
+            {
+                health = value;
+            }
+        }
+
+        HealthBar hbar;
+
         public RotatingSprite(Vector2 userPosition, List<TileRef> sheetRefs, int frameWidth, int frameHeight, float layerDepth)
             : base(userPosition, sheetRefs, frameWidth, frameHeight, layerDepth)
         {
             
         }
 
-        public void follow(AnimateSheetSprite followed)
+        public void AddHealthBar(HealthBar h)
         {
-            //MouseState state = Mouse.GetState();
-            angleOfRotation = TurnToFace(followed.PixelPosition, PixelPosition, angleOfRotation, 0.01f);
+            Hbar = h;
+        }
+
+        public virtual void follow(AnimateSheetSprite followed)
+        {
+            // Only rotate towards the player if he enters the field of View
+            if (followed.BoundingRectangle.Intersects(Range))
+                angleOfRotation = TurnToFace(followed.PixelPosition, PixelPosition, angleOfRotation, rotationSpeed);
+                        
+        }
+
+        public void followPosition(Vector2 Pos)
+        {
+            angleOfRotation = TurnToFace( Pos, PixelPosition, angleOfRotation, rotationSpeed);
         }
 
         protected static float TurnToFace(Vector2 position, Vector2 faceThis,
@@ -50,6 +110,7 @@ namespace AnimatedSprite
 
         public override void Draw(SpriteBatch spriteBatch, Texture2D tx)
         {
+
             base.Draw(spriteBatch, tx);
         }
         /// <summary>

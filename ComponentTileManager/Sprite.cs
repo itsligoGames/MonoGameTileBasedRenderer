@@ -18,6 +18,9 @@ namespace AnimatedSprite
         protected float angleOfRotation;
         protected float spriteDepth = 1f;
         private float scale = 1f;
+
+        private Rectangle boundingRectangle;
+
         public bool Visible
         {
             get { return visible; }
@@ -91,6 +94,20 @@ namespace AnimatedSprite
             set
             {
                 scale = value;
+            }
+        }
+
+        public Rectangle BoundingRectangle
+        {
+            get
+            {
+                return new Rectangle(PixelPosition.ToPoint(),
+                    new Point(FrameWidth , FrameHeight ));
+            }
+
+            set
+            {
+                boundingRectangle = value;
             }
         }
 

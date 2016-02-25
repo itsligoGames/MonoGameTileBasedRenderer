@@ -11,13 +11,14 @@ using TileManagerNS;
 using Engine.Engines;
 using Microsoft.Xna.Framework.Input.Touch;
 using Sprites;
+using ComponentTileManager;
 
 namespace AnimatedSprite
 {
     public enum DIRECTION {LEFT,RIGHT,UP,DOWN }
     public enum STATE { MOVING,STILL}
 
-        class PlayerWithWeapon : AnimateSheetSprite
+        class PlayerWithWeapon : RotatingSprite
         {
             
             private Projectile myProjectile;
@@ -37,7 +38,7 @@ namespace AnimatedSprite
             get { return Tileposition + Vector2.One/2; }
         }
 
-        public float speed = 0.1f;
+        public float speed = 0.2f;
             public Vector2 TargetTilePos;
             public STATE MovingState = STATE.STILL;
 
@@ -98,6 +99,7 @@ namespace AnimatedSprite
             }
         }
 
+
         internal CrossHair Site
         {
             get
@@ -127,13 +129,14 @@ namespace AnimatedSprite
             _directionFrames.Add(new List<TileRef>()); // UP
             _directionFrames.Add(new List<TileRef>()); // Down All to be set by setFrameSet
             TileBound = tileBounds;
+            
             Site = new CrossHair(_cam, userPosition, new List<TileRef>() { new TileRef(11, 6, 0)}, frameWidth, frameHeight,2f);
             }
 
         public void loadProjectile(Projectile r)
-        {
-            MyProjectile = r;
-        }
+            {
+                MyProjectile = r;
+            }
 
         public void setFrameSet(DIRECTION d, List<TileRef> sheetRefs)
         {
@@ -145,28 +148,40 @@ namespace AnimatedSprite
             DIRECTION oldDirection = Direction;
             // remember the old TilePosition in case we need to  move back
             Vector2 PreviousTilePosition = Tileposition;
+            // Rotate with the mouse
+            if ( 
+                InputEngine.PreviousMouseState.Position.ToVector2() 
+                        != InputEngine.MousePosition)
+            {
+                Direction = DIRECTION.LEFT;
+                //angleOfRotation = 0;
+                followPosition(Site.PixelPosition);
+            }
 
             if (InputEngine.IsKeyHeld(Keys.Right))
-
             {
+                angleOfRotation = 0f;
                 Tileposition += new Vector2(1, 0) * speed;
                 _direction = DIRECTION.RIGHT;
                 MovingState = STATE.MOVING;
             }
             if (InputEngine.IsKeyHeld(Keys.Left))
             {
+                angleOfRotation = 0f;
                 Tileposition += new Vector2(-1, 0) * speed;
                 _direction = DIRECTION.LEFT;
                 MovingState = STATE.MOVING;
             }
             if (InputEngine.IsKeyHeld(Keys.Up))
             {
+                angleOfRotation = 0f;
                 Tileposition += new Vector2(0, -1) * speed;
                 _direction = DIRECTION.UP;
                 MovingState = STATE.MOVING;
             }
             if (InputEngine.IsKeyHeld(Keys.Down))
             {
+                angleOfRotation = 0f;
                 Tileposition += new Vector2(0, 1) * speed;
                 _direction = DIRECTION.DOWN;
                 MovingState = STATE.MOVING;
@@ -334,37 +349,37 @@ namespace AnimatedSprite
 
             //return moved;
         }
+
+        internal void HitTest(Sentry s)
+        {
+            if (myProjectile.ProjectileState == Projectile.PROJECTILE_STATE.EXPOLODING &&
+                myProjectile.BoundingRectangle.Intersects(s.BoundingRectangle))
+                s.Health--;
+
+
+        }
+
         public override void Update(GameTime gameTime)
         {
-
-            // check for site change
-            //checkforMovement();
             if(Site != null)
                 Site.Update(gameTime);
-            //// Whenever the rocket is still and loaded it follows the player posiion
-            //if (MyProjectile != null && MyProjectile.ProjectileState == Projectile.PROJECTILE_STATE.STILL)
-            //    MyProjectile.Tileposition = this.Tileposition;
-            //// if a roecket is loaded
             if (MyProjectile != null 
                 && MyProjectile.ProjectileState == Projectile.PROJECTILE_STATE.STILL)
             {
                 myProjectile.Tileposition = Tileposition;
                 // fire the rocket and it looks for the target
-                if (Keyboard.GetState().IsKeyDown(Keys.Space))
+                if (InputEngine.IsKeyHeld(Keys.Space) || InputEngine.IsMouseLeftClick())
                     MyProjectile.fire(Site.Tileposition);
             }
-
+                
             if (MyProjectile != null)
                 MyProjectile.Update(gameTime);
-
-            // Update the Camera with respect to the players new position
-            //Vector2 delta = cam.Pos - this.position;
-            //cam.Pos += delta;
-
-            // Update the players site
-            //Site.Update(gameTime);
-            // call Sprite Update to get it to animated 
-
+            // update the health bar object
+            if (Hbar != null)
+            {
+                Hbar.position = PixelPosition + new Vector2(-10, -20);
+                Hbar.health = Health;
+            }
             base.Update(gameTime);
         }
             
@@ -373,9 +388,13 @@ namespace AnimatedSprite
             base.Draw(spriteBatch,tx);
             if (MyProjectile != null && MyProjectile.ProjectileState != Projectile.PROJECTILE_STATE.STILL)
                 MyProjectile.Draw(spriteBatch, tx);
-            if(Site != null)
+            if (Site != null)
+            {
                 Site.Draw(spriteBatch, tx);
+            }
 
+            if (Hbar != null)
+                Hbar.draw(spriteBatch);
         }
 
     }
