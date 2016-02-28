@@ -72,13 +72,13 @@ namespace ComponentTileManager
             _tileRefs.Add(new TileRef(0, 2, 4));
             TileTransform = new Vector2(tileWidth, tileHeight);
             // alternate representation for tile layer references
-            _tileTypeRefs.Add(TILETYPES.FREE, new TileRef(4, 2, 0));
-            _tileTypeRefs.Add(TILETYPES.PAVEMENT, new TileRef(3, 3, 1));
-            _tileTypeRefs.Add(TILETYPES.GROUND, new TileRef(6, 3, 2));
-            _tileTypeRefs.Add(TILETYPES.BLUE, new TileRef(6, 4, 3));
-            _nonPassableTiles.Add(TILETYPES.FREE);
-            _nonPassableTiles.Add(TILETYPES.GROUND);
-            _nonPassableTiles.Add(TILETYPES.BLUE);
+            //_tileTypeRefs.Add(TILETYPES.FREE, new TileRef(4, 2, 0));
+            //_tileTypeRefs.Add(TILETYPES.PAVEMENT, new TileRef(3, 3, 1));
+            //_tileTypeRefs.Add(TILETYPES.GROUND, new TileRef(6, 3, 2));
+            //_tileTypeRefs.Add(TILETYPES.BLUE, new TileRef(6, 4, 3));
+            //_nonPassableTiles.Add(TILETYPES.FREE);
+            //_nonPassableTiles.Add(TILETYPES.GROUND);
+            //_nonPassableTiles.Add(TILETYPES.BLUE);
 
             string[] backTileNames = { "free", "pavement", "ground", "blue", "home" };
             string[] impassibleTiles = { "free", "ground", "blue" };
@@ -92,14 +92,14 @@ namespace ComponentTileManager
             setupCollisionMask();
             // Create an enemy object that will rotate towards the player
             //Tile enemyTile = _tileManager.ActiveLayer.Impassable.First();
-            setupEnemies(5, tileWidth, tileHeight);
+            //setupEnemies(5, tileWidth, tileHeight);
             //showPathTiles(_path);
             createSpawnPositions();
-            showSpawns();
+            setupTowers();
             setupFollowers(tileWidth, tileHeight);
         }
 
-        private void showSpawns()
+        private void setupTowers()
         {
             foreach (Tile t in _spawnPositions)
             {
@@ -156,23 +156,22 @@ namespace ComponentTileManager
 
         public void setupFollowers(int tileWidth, int tileHeight)
         {
-            // Create two initial followers
-            while(_followers.Count < 1)
-            {
-                Vector2 randomTowerPosition = _towers.Select(t => new {t.TilePlace.X, t.TilePlace.Y,t.Position, gid = Guid.NewGuid() })
+            _followers.Clear();
+            // Create one follower for testing purposes near bottom right tower
+                var SpawnTower = _towers.Select(t => new {t.TilePlace.X, t.TilePlace.Y,t.Position, gid = Guid.NewGuid() })
                     .OrderByDescending(t => t.X)
                     .OrderByDescending(t => t.Y)
-                    .First().Position;
-                        //            .OrderBy(t => t.gid).First().Position;
-                _followers.Add(new FollowingEnemy(Game, 
-                    new Vector2(randomTowerPosition.X ,
-                                    randomTowerPosition.Y),
-                   _tileManager.ActiveLayer.getPassableTileAt((int)randomTowerPosition.X/tileWidth, 
-                                    (int)randomTowerPosition.Y/tileHeight),
-                    new List<TileRef>() {
+                    .First();
+                 
+                _followers.Add(new FollowingEnemy(Game,
+                  new Vector2(SpawnTower.X,         // Tile position
+                                  SpawnTower.Y),
+                                  _tileManager.ActiveLayer.getPassableTileAt((int)SpawnTower.X,
+                                  (int)SpawnTower.Y), // Current Tile
+                  new List<TileRef>() { // Image reference
                     new TileRef(17,7,0)
-                         }, tileWidth, tileHeight, 0.5f));
-            }
+                       }, tileWidth, tileHeight, 1.5f));
+            loadFollowerProjectiles();
         }
 
         public void setupEnemies(int EnemyCount, int tileWidth, int tileHeight)
@@ -205,11 +204,31 @@ namespace ComponentTileManager
                     new TileRef(17,7,0)
                          }, tileWidth, tileHeight, 1f));
             }
-            loadEnemyProjectiles();
+            loadSentryProjectiles();
 
         }
+        public void loadFollowerProjectiles()
+        {
+            // Foreach enemy load a projectile
+            foreach (var e in _followers)
+            {
+                Projectile p = new Projectile(Game, e.TilePosition,
+                new List<TileRef>() { new TileRef(3,0,0),
+                                                new TileRef(4,0,0),
+                                                new TileRef(5,0,0),
+                                                new TileRef(6,0,0)},
+                new List<TileRef>() { new TileRef(0,0,0),
+                                                new TileRef(1,0,0),
+                                                new TileRef(2,0,0)
+                                        },
+                e.FrameWidth, e.FrameHeight, 1.5f);
+                e.loadProjectile(p);
+                e.Health = 100;
+                e.Hbar = new Helpers.HealthBar(Game, e.PixelPosition + new Vector2(-10, -20));
 
-        public void loadEnemyProjectiles()
+            }
+        }
+        public void loadSentryProjectiles()
         {
             // Foreach enemy load a projectile
             foreach (var e in _enemies)
@@ -245,11 +264,30 @@ namespace ComponentTileManager
         {
             if (_player != null)
             {
+                // pixelMove is now tileMove
                 _player.tileMove(_collisionSet);
                 _player.Update(gameTime);
                 _tileManager.CurrentTile = _player.CurrentPlayerTile =
                     _tileManager.ActiveLayer.getPassableTileAt((int)Math.Round(_player.TilePosition.X),
                                             (int)Math.Round(_player.TilePosition.Y));
+
+                foreach (FollowingEnemy _enemy in _followers)
+                {
+                    _player.HitTest(_enemy);
+                    _enemy.follow(_player);
+                    _enemy.Update(gameTime);
+                    // Test if there is an explosion on the enemy from the player projectile
+                    _enemy.HitTest(_player);
+
+                }
+
+                var deadFollowers = _followers.Where(s => s.Health <= 0).ToList();
+                foreach (FollowingEnemy s in deadFollowers)
+                {
+                    _followers.Remove(s); // Must remove the from the local collection 
+                    Game.Components.Remove(s); // and also from the Game components 
+                }
+
 
                 foreach (var _enemy in _enemies)
                 {
@@ -279,22 +317,22 @@ namespace ComponentTileManager
                 foreach (FollowingEnemy _enemy in _followers)
                 {
                     _enemy.checkPosition(_tileManager, _player.CurrentPlayerTile);
-                    showPathTiles(_enemy.CurrentPath.ToList());
+                    //showPathTiles(_enemy.CurrentPath.ToList());
                 }
 
                 Camera Cam = Game.Services.GetService<Camera>();
                 Cam.follow(_player.PixelPosition,
                  GraphicsDevice.Viewport);
             }
-            if (InputEngine.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R))
-            {
-                _pathTiles = new List<SimpleSprite>();
-                Random r = new Random();
-                Tile start = _spawnPositions[r.Next(3)];
-                Tile finish = _player.CurrentPlayerTile;
-                _path = PathFinder.Path(_tileManager,start, finish);
-                showPathTiles(_path);
-            }
+            //if (InputEngine.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R))
+            //{
+            //    _pathTiles = new List<SimpleSprite>();
+            //    Random r = new Random();
+            //    Tile start = _spawnPositions[r.Next(3)];
+            //    Tile finish = _player.CurrentPlayerTile;
+            //    _path = PathFinder.Path(_tileManager,start, finish);
+            //    showPathTiles(_path);
+            //}
             base.Update(gameTime);
         }
 
@@ -351,6 +389,7 @@ namespace ComponentTileManager
             sp.Begin(SpriteSortMode.Immediate,
                         BlendState.AlphaBlend, null, null, null, null, 
                             Cam.CurrentCameraTranslation);
+            // Draw the Tiles
             foreach (Tile t in _tileManager.ActiveLayer.Tiles)
             {
                 Vector2 position = new Vector2(t.X * t.TileWidth * _scale, 
@@ -361,16 +400,16 @@ namespace ComponentTileManager
                                         t.TileWidth * _scale, t.TileHeight * _scale)
                     , Color.White);
             }
-
+            // Draw the player position
             if (_player != null)
             {
                 sp.DrawString(font,  "Site pos " + _player.Site.PixelPosition.ToString(), _player.Site.PixelPosition, Color.White);
                 //_player.Draw(sp, _tileSheet);
 
-                foreach (var _enemy in _enemies)
+                foreach (var _enemy in _followers)
                 {
                     sp.Draw(_txShowRectangle, _enemy.Range, new Color(0, 0, 0, 128));
-                    //_enemy.Draw(sp, _tileSheet);
+                    
                 }
                 //if (_player.MyProjectile != null)
                 //    sp.DrawString(font, "ptp " + _player.Tileposition.ToString(), new Vector2(10, 10), Color.White);

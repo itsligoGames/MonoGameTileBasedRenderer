@@ -15,9 +15,11 @@ namespace AnimatedSprite
     {
 
         int health = 100;
+        protected int DamageRate = 1; // The rate at which this object reduces the health of others
+        protected int DamageSustainedRate = 1; // The rate at which this object takes on damage
         private Rectangle range;
-        private int tileRangeDistance = 4;
-        float rotationSpeed = .02f;
+        protected int tileRangeDistance = 4;
+        protected float rotationSpeed = .5f;
         public Rectangle Range
         {
             get
@@ -105,11 +107,18 @@ namespace AnimatedSprite
 
         public override void Update(GameTime gametime)
         {
+            if(Hbar != null)
+               {
+                Hbar.health = Health;
+                Hbar.position = PixelPosition - new Vector2(10, 20);
+            }
             base.Update(gametime);
         }
 
         public override void Draw(GameTime gameTime)
         {
+            if (Hbar != null)
+                Hbar.draw(Game.Services.GetService<SpriteBatch>());
             base.Draw(gameTime);
         }
         /// <summary>

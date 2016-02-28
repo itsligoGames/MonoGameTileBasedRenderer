@@ -40,6 +40,7 @@ namespace ComponentTileManager
 
         public override void follow(AnimateSheetSprite followed)
         {
+            // only fire towards followed if a stationary sentry
                 if (P != null 
                     && P.ProjectileState == Projectile.PROJECTILE_STATE.STILL 
                     && followed.BoundingRectangle.Intersects(Range))
@@ -54,14 +55,12 @@ namespace ComponentTileManager
            if (P != null)
                 P.Update(gametime);
 
-            Hbar.health = Health;
-            
             base.Update(gametime);
         }
         public override void Draw(GameTime gameTime)
         {
-            if (P != null && P.ProjectileState != Projectile.PROJECTILE_STATE.STILL)
-                P.Draw(gameTime);
+            //if (P != null)
+            //    P.Draw(gameTime);
 
             if (Hbar != null)
                 Hbar.draw(Game.Services.GetService<SpriteBatch>());
@@ -69,15 +68,15 @@ namespace ComponentTileManager
             base.Draw(gameTime);
         }
 
-
-        internal void HitTest(PlayerWithWeapon player)
+        internal virtual void HitTest(RotatingSprite player)
         {
             if (P.ProjectileState == Projectile.PROJECTILE_STATE.EXPOLODING &&
                 P.BoundingRectangle.Intersects(player.BoundingRectangle))
-                player.Health--;
-            
-            
+                player.Health -= DamageRate;
+
+
         }
+
 
     }
 }

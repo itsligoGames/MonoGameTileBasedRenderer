@@ -129,7 +129,7 @@ namespace AnimatedSprite
             _directionFrames.Add(new List<TileRef>()); // UP
             _directionFrames.Add(new List<TileRef>()); // Down All to be set by setFrameSet
             TileBound = tileBounds;
-            
+            DamageRate = 10;            
             Site = new CrossHair(game, _cam, userPosition, new List<TileRef>() { new TileRef(11, 6, 0)}, frameWidth, frameHeight,2f);
             }
 
@@ -157,8 +157,7 @@ namespace AnimatedSprite
                 followPosition(Site.PixelPosition);
             }
             // Rotate with the mouse
-            if ( 
-                InputEngine.PreviousMouseState.Position.ToVector2() 
+            if (InputEngine.PreviousMouseState.Position.ToVector2() 
                         != InputEngine.MousePosition)
             {
                 // reset the original direction facing
@@ -365,12 +364,11 @@ namespace AnimatedSprite
             //return moved;
         }
 
-        internal void HitTest(Sentry s)
+        internal void HitTest(RotatingSprite s)
         {
             if (myProjectile.ProjectileState == Projectile.PROJECTILE_STATE.EXPOLODING &&
                 myProjectile.BoundingRectangle.Intersects(s.BoundingRectangle))
-                s.Health--;
-
+                s.Health -= DamageRate;
 
         }
 
@@ -390,26 +388,17 @@ namespace AnimatedSprite
             if (MyProjectile != null)
                 MyProjectile.Update(gameTime);
             // update the health bar object
-            if (Hbar != null)
-            {
-                Hbar.position = PixelPosition + new Vector2(-10, -20);
-                Hbar.health = Health;
-            }
+            //if (Hbar != null)
+            //{
+            //    Hbar.position = PixelPosition + new Vector2(-10, -20);
+            //    Hbar.health = Health;
+            //}
             base.Update(gameTime);
         }
 
         public override void Draw(GameTime gameTime)
         {
-            //    base.Draw(spriteBatch,tx);
-            //    if (MyProjectile != null && MyProjectile.ProjectileState != Projectile.PROJECTILE_STATE.STILL)
-            //        MyProjectile.Draw(spriteBatch, tx);
-            //    if (Site != null)
-            //    {
-            //        Site.Draw(spriteBatch, tx);
-            //    }
 
-            if (Hbar != null)
-                Hbar.draw(Game.Services.GetService<SpriteBatch>());
 
             base.Draw(gameTime);
         }

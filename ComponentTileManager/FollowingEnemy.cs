@@ -1,5 +1,6 @@
 ﻿using AnimatedSprite;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,14 +10,15 @@ using TileManagerNS;
 namespace ComponentTileManager
 {
 
-    class FollowingEnemy:  RotatingSprite
+    class FollowingEnemy:  Sentry
     {
         Stack<Tile> currentPath = new Stack<Tile>();
         Tile currentTile;
         Vector2 currentPos;
         float speed = 0.01f;        
         private Tile nextTile;
-        float delay = 1;
+        const int DELAYTIME = 10;
+        int delay = DELAYTIME;
         public STATE MovingState = STATE.STILL;
         public Tile CurrentPlayerTile;
         public float PreviousHeading = 0f;
@@ -27,8 +29,10 @@ namespace ComponentTileManager
             int frameWidth, int frameHeight, float layerDepth)
             : base(game, userPosition, sheetRefs, frameWidth, frameHeight, layerDepth)
         {
-
+            tileRangeDistance = 5;
             currentTile = CurrentTile;
+            rotationSpeed = 100f;
+
         }
 
         public Stack<Tile> CurrentPath
@@ -57,6 +61,20 @@ namespace ComponentTileManager
 
         }
 
+
+        public override void follow(AnimateSheetSprite followed)
+        {
+            if (P != null && delay-- <= 0)
+            {
+                delay = DELAYTIME;
+                P.TilePosition = TilePosition;
+                //P.fire(followed.TilePosition);
+                base.follow(followed);
+            }
+            
+            
+        }
+
         public override void Update(GameTime gametime)
         {
             // if we are startng on the path then 
@@ -83,18 +101,19 @@ namespace ComponentTileManager
                     currentPos += direction * speed;
                     // rotate towards the new heading
                     TilePosition = currentPos;
-                    followPosition(CurrentTilePixelPosition(CurrentPlayerTile));
+                    //followPosition(CurrentTilePixelPosition(CurrentPlayerTile));
                     MovingState = STATE.MOVING;
-                }
-                // otherwise we are at the next node so stop
-                // and choose a new next node to move towards see STILL STATE above
-                else if (CurrentPath.Count > 0)
+                
+            }
+            // otherwise we are at the next node so stop
+            // and choose a new next node to move towards see STILL STATE above
+            else if (CurrentPath.Count > 0)
                 {
                     // change rotation towards the next tile and stop
-                    followPosition(CurrentTilePixelPosition(CurrentPlayerTile));
+                    //followPosition(CurrentTilePixelPosition(CurrentPlayerTile));
                     MovingState = STATE.STILL;
                 }
-                
+            
             base.Update(gametime);
         }
 
@@ -108,9 +127,9 @@ namespace ComponentTileManager
             return new Vector2(t.X, t.Y) * new Vector2(t.TileWidth,t.TileHeight);
         }
 
-
         public override void Draw(GameTime gameTime)
         {
+
             base.Draw(gameTime);
         }
 
