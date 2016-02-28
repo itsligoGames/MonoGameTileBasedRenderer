@@ -44,6 +44,8 @@ namespace Engine.Engines
         private static KeyboardState currentKeyState;
 
         private static Vector2 previousMousePos;
+
+
         private static Vector2 currentMousePos;
 
         private static MouseState previousMouseState;
@@ -122,7 +124,7 @@ namespace Engine.Engines
             }
 #endif
 #if WINDOWS
-            previousPadState = currentPadState;
+            PreviousPadState = currentPadState;
             previousKeyState = currentKeyState;
 
             currentPadState = GamePad.GetState(PlayerIndex.One);
@@ -156,7 +158,7 @@ namespace Engine.Engines
 
         public static bool IsButtonPressed(Buttons buttonToCheck)
         {
-            if (currentPadState.IsButtonUp(buttonToCheck) && previousPadState.IsButtonDown(buttonToCheck))
+            if (currentPadState.IsButtonUp(buttonToCheck) && PreviousPadState.IsButtonDown(buttonToCheck))
             {
                 return true;
             }
@@ -259,6 +261,19 @@ namespace Engine.Engines
         public static Vector2 MousePosition
         {
             get { return currentMousePos; }
+        }
+
+        public static GamePadState PreviousPadState
+        {
+            get
+            {
+                return previousPadState;
+            }
+
+            set
+            {
+                previousPadState = value;
+            }
         }
 #endif
 

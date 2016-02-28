@@ -45,6 +45,7 @@
     <Compile Include="HealthBar.cs" />
     <Compile Include="InputEngine.cs" />
     <Compile Include="models.cs" />
+    <Compile Include="PathFinder.cs" />
     <Compile Include="PlayerWithWeapon.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Projectile.cs" />
@@ -57,6 +58,7 @@
     <Compile Include="TileManager.cs" />
     <Compile Include="TileRef.cs" />
     <Compile Include="TileRenderer.cs" />
+    <Compile Include="Tower.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="MonoGame.Framework">

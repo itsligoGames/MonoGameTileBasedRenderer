@@ -26,8 +26,8 @@ namespace ComponentTileManager
             }
         }
 
-        public Sentry(Vector2 userPosition, List<TileRef> sheetRefs, int frameWidth, int frameHeight, float layerDepth)
-            : base(userPosition, sheetRefs, frameWidth, frameHeight, layerDepth)
+        public Sentry(Game game,Vector2 userPosition, List<TileRef> sheetRefs, int frameWidth, int frameHeight, float layerDepth)
+            : base(game, userPosition, sheetRefs, frameWidth, frameHeight, layerDepth)
         {
 
 
@@ -43,29 +43,32 @@ namespace ComponentTileManager
                 if (P != null 
                     && P.ProjectileState == Projectile.PROJECTILE_STATE.STILL 
                     && followed.BoundingRectangle.Intersects(Range))
-                            P.fire(followed.Tileposition);
+                            P.fire(followed.TilePosition);
             base.follow(followed);
         }
         public override void Update(GameTime gametime)
         {
             if (P != null
                     && P.ProjectileState == Projectile.PROJECTILE_STATE.STILL)
-                        P.Tileposition = Tileposition;
+                        P.TilePosition = TilePosition;
            if (P != null)
                 P.Update(gametime);
 
             Hbar.health = Health;
-
+            
             base.Update(gametime);
         }
-        public override void Draw(SpriteBatch spriteBatch, Texture2D tx)
+        public override void Draw(GameTime gameTime)
         {
             if (P != null && P.ProjectileState != Projectile.PROJECTILE_STATE.STILL)
-                P.Draw(spriteBatch, tx);
+                P.Draw(gameTime);
+
             if (Hbar != null)
-                Hbar.draw(spriteBatch);
-            base.Draw(spriteBatch, tx);
+                Hbar.draw(Game.Services.GetService<SpriteBatch>());
+
+            base.Draw(gameTime);
         }
+
 
         internal void HitTest(PlayerWithWeapon player)
         {

@@ -35,7 +35,7 @@ namespace ComponentTileManager
         {1,2,3,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2},
         {1,1,1,1,1,1,1,1,1,1,1,3,2,2,2,2,2,2,3,2,2,2,2,2,2,2,3,2,2,2,2,2,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2},
         {1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2},
-        {2,2,2,2,2,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2},
+        {2,1,1,2,2,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2},
         {2,2,2,2,2,2,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2},
         {2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,2,0,0,0,2,0,0,0,2,2,2,2,3,2,2,2,2},
         {2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -96,7 +96,7 @@ namespace ComponentTileManager
             _tileRenderer = new TileRenderer(this,tileMap,tileWidth,tileHeight);
             cam = new Camera(ViewportCentre,
                         new Vector2(tileMap.GetLength(1) * tileWidth,
-                            tileMap.GetLength(0) * tileHeight));
+                            tileMap.GetLength(0) * tileHeight), GraphicsDevice.Viewport);
             cam.CamPos = Vector2.Zero;
             this.Services.AddService<Camera>(cam);
 
@@ -136,7 +136,7 @@ namespace ComponentTileManager
         };
             
 
-            player = new PlayerWithWeapon(cam, new Vector2(0, 0), new Vector2(tileMap.GetLength(1), tileMap.GetLength(0)),
+            player = new PlayerWithWeapon(this,cam, new Vector2(0, 0), new Vector2(tileMap.GetLength(1), tileMap.GetLength(0)),
                             initialFrames,
                             64, 64, 1.0f); // Default stopped
 
@@ -180,7 +180,7 @@ namespace ComponentTileManager
                     new TileRef(15, 7, 0),
                     new TileRef(15, 8, 0),
             });
-            Projectile p = new Projectile(player.PixelPosition, 
+            Projectile p = new Projectile(this,player.PixelPosition, 
                 new List<TileRef>() { new TileRef(3,0,0),
                                         new TileRef(4,0,0),
                                         new TileRef(5,0,0),

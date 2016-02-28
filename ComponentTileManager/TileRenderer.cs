@@ -28,17 +28,19 @@ namespace ComponentTileManager
         private List<SimpleSprite> _pathTiles = new List<SimpleSprite>();
         PlayerWithWeapon _player;
         List<SimpleSprite> _collisionSet = new List<SimpleSprite>();
-        List<SimpleSprite> _towers = new List<SimpleSprite>();
+        List<Tower> _towers = new List<Tower>();
         Dictionary<TILETYPES, TileRef> _tileTypeRefs = new Dictionary<TILETYPES, TileRef>();
         List<TILETYPES> _tileTypes = new List<TILETYPES>();
         List<TILETYPES> _nonPassableTiles = new List<TILETYPES>();
         Vector2 TileTransform;
+        // To be replaced by Sentry Components
         List<Sentry> _enemies = new List<Sentry>();
+
         List<Tile> _spawnPositions = new List<Tile>();
         List<Color> _spawnColor = new List<Color> { Color.Blue, Color.White, Color.Red, Color.RosyBrown };
         Texture2D _txShowRectangle;
 
-
+        List<FollowingEnemy> _followers = new List<FollowingEnemy>();
 
         public TileManager TileManager
         {
@@ -59,6 +61,7 @@ namespace ComponentTileManager
             _tileManager = new TileManager();
             // Tile sheet that all sprites are taken from
             _tileSheet = game.Content.Load<Texture2D>(@"Tiles\tank tiles 64 x 64");
+            game.Services.AddService(_tileSheet);
             _font = game.Content.Load<SpriteFont>("message");
             // texture to show collision fields for enemies
             _txShowRectangle = game.Content.Load<Texture2D>("Collison");
@@ -93,13 +96,14 @@ namespace ComponentTileManager
             //showPathTiles(_path);
             createSpawnPositions();
             showSpawns();
+            setupFollowers(tileWidth, tileHeight);
         }
 
         private void showSpawns()
         {
             foreach (Tile t in _spawnPositions)
             {
-                SimpleSprite s = new SimpleSprite(Game.Content.Load<SpriteFont>("DebugFont"),
+                Tower s = new Tower(t,Game.Content.Load<SpriteFont>("DebugFont"),
                     Game.Content.Load<Texture2D>("tower_03"),
                             new Vector2(t.X * t.TileWidth, t.Y * t.TileHeight),
                                 new Vector2(t.TileWidth, t.TileHeight));
@@ -138,6 +142,7 @@ namespace ComponentTileManager
 
         private void showPathTiles(List<Tile> _path)
         {
+            _pathTiles.Clear();
             foreach (Tile t in _path)
             {
                 SimpleSprite s = new SimpleSprite(Game.Content.Load<SpriteFont>("DebugFont"),
@@ -146,6 +151,27 @@ namespace ComponentTileManager
                                 new Vector2(t.TileWidth, t.TileHeight));
                 s.Visible = true;
                 _pathTiles.Add(s);
+            }
+        }
+
+        public void setupFollowers(int tileWidth, int tileHeight)
+        {
+            // Create two initial followers
+            while(_followers.Count < 1)
+            {
+                Vector2 randomTowerPosition = _towers.Select(t => new {t.TilePlace.X, t.TilePlace.Y,t.Position, gid = Guid.NewGuid() })
+                    .OrderByDescending(t => t.X)
+                    .OrderByDescending(t => t.Y)
+                    .First().Position;
+                        //            .OrderBy(t => t.gid).First().Position;
+                _followers.Add(new FollowingEnemy(Game, 
+                    new Vector2(randomTowerPosition.X ,
+                                    randomTowerPosition.Y),
+                   _tileManager.ActiveLayer.getPassableTileAt((int)randomTowerPosition.X/tileWidth, 
+                                    (int)randomTowerPosition.Y/tileHeight),
+                    new List<TileRef>() {
+                    new TileRef(17,7,0)
+                         }, tileWidth, tileHeight, 0.5f));
             }
         }
 
@@ -171,9 +197,10 @@ namespace ComponentTileManager
                                          join places in randomEnemyPlaces
                                          on new { enemyPos.X, enemyPos.Y } equals new { places.X, places.Y }
                                          select enemyPos).ToList();
+            // The enemies are added as game components so they are in a collection 
             foreach (Tile t in enemyPositions)
             {
-                _enemies.Add(new Sentry(new Vector2(t.X, t.Y),
+                _enemies.Add(new Sentry(Game, new Vector2(t.X, t.Y),
                     new List<TileRef>() {
                     new TileRef(17,7,0)
                          }, tileWidth, tileHeight, 1f));
@@ -187,7 +214,7 @@ namespace ComponentTileManager
             // Foreach enemy load a projectile
             foreach (var e in _enemies)
             {
-                Projectile p = new Projectile(e.Tileposition,
+                Projectile p = new Projectile(Game,e.TilePosition,
                 new List<TileRef>() { new TileRef(3,0,0),
                                                 new TileRef(4,0,0),
                                                 new TileRef(5,0,0),
@@ -199,7 +226,7 @@ namespace ComponentTileManager
                 e.FrameWidth, e.FrameHeight, 1.5f);
                 e.loadProjectile(p);
                 e.Health = 100;
-                e.Hbar = new Helpers.HealthBar(Game.GraphicsDevice, e.PixelPosition + new Vector2(-10, -20));
+                e.Hbar = new Helpers.HealthBar(Game, e.PixelPosition + new Vector2(-10, -20));
 
             }
         }
@@ -218,13 +245,12 @@ namespace ComponentTileManager
         {
             if (_player != null)
             {
-                _player.pixelMove(_collisionSet);
+                _player.tileMove(_collisionSet);
                 _player.Update(gameTime);
-
                 _tileManager.CurrentTile = _player.CurrentPlayerTile =
-                    _tileManager.ActiveLayer.getPassableTileAt((int)Math.Round(_player.Tileposition.X),
-                                            (int)Math.Round(_player.Tileposition.Y));
-                //_tileManager.CurrentTile = _player.CurrentPlayerTile = getBestTile(_player.Tileposition);
+                    _tileManager.ActiveLayer.getPassableTileAt((int)Math.Round(_player.TilePosition.X),
+                                            (int)Math.Round(_player.TilePosition.Y));
+
                 foreach (var _enemy in _enemies)
                 {
                     // Test if there is an explosion on the enemy from the player projectile
@@ -236,15 +262,25 @@ namespace ComponentTileManager
                 }
                 // remove destroyed enemies
                 var dead = _enemies.Where(s => s.Health <= 0).ToList();
-                foreach (Sentry s in dead)
-                    _enemies.Remove(s);
 
+                foreach (Sentry s in dead)
+                {
+                    _enemies.Remove(s); // Must remove the from the local collection 
+                    Game.Components.Remove(s); // and also from the Game components 
+                }
+
+                // if the player is dead then we just restart
                 if (_player.Health <= 0)
                 { 
                     AddPlayer(_player); // resets the player
-                    setupEnemies(5, _player.FrameWidth, _player.FrameHeight);
+                    setupEnemies(5, _player.FrameWidth, _player.FrameHeight); // resets enemies
                 }
 
+                foreach (FollowingEnemy _enemy in _followers)
+                {
+                    _enemy.checkPosition(_tileManager, _player.CurrentPlayerTile);
+                    showPathTiles(_enemy.CurrentPath.ToList());
+                }
 
                 Camera Cam = Game.Services.GetService<Camera>();
                 Cam.follow(_player.PixelPosition,
@@ -256,7 +292,7 @@ namespace ComponentTileManager
                 Random r = new Random();
                 Tile start = _spawnPositions[r.Next(3)];
                 Tile finish = _player.CurrentPlayerTile;
-                _path = Path(start, finish);
+                _path = PathFinder.Path(_tileManager,start, finish);
                 showPathTiles(_path);
             }
             base.Update(gameTime);
@@ -292,11 +328,12 @@ namespace ComponentTileManager
             if (_player.CurrentPlayerTile != null)
             {
                 _tileManager.CurrentTile = _player.CurrentPlayerTile;
-                _player.Tileposition = new Vector2(_player.CurrentPlayerTile.X, _player.CurrentPlayerTile.Y);
+                _player.TilePosition = new Vector2(_player.CurrentPlayerTile.X, _player.CurrentPlayerTile.Y);
             }
             p.Health = 100;
-            p.Hbar = new Helpers.HealthBar(Game.GraphicsDevice, p.PixelPosition + new Vector2(-10, -10));
-            
+            p.Hbar = new Helpers.HealthBar(Game, p.PixelPosition + new Vector2(-10, -10));
+            p.Site.TilePosition = p.TilePosition;
+                        
             //Tile Finish = _player.CurrentPlayerTile = _tileManager.ActiveLayer.getPassableTileAt((int)_player.Tileposition.X, (int)_player.Tileposition.Y);
             //Tile Start = RandomPassableTile();
             //_path = Path(Start, Finish);
@@ -305,16 +342,19 @@ namespace ComponentTileManager
 
         public override void Draw(GameTime gameTime)
         {
+
             SpriteBatch sp = Game.Services.GetService<SpriteBatch>();
             //Texture2D tx = Game.Services.GetService<Texture2D>();
             SpriteFont font = Game.Services.GetService<SpriteFont>();
             Camera Cam = Game.Services.GetService<Camera>();
 
             sp.Begin(SpriteSortMode.Immediate,
-                BlendState.AlphaBlend, null, null, null, null, Cam.CurrentCameraTranslation);
+                        BlendState.AlphaBlend, null, null, null, null, 
+                            Cam.CurrentCameraTranslation);
             foreach (Tile t in _tileManager.ActiveLayer.Tiles)
             {
-                Vector2 position = new Vector2(t.X * t.TileWidth * _scale, t.Y * t.TileHeight * _scale);
+                Vector2 position = new Vector2(t.X * t.TileWidth * _scale, 
+                                                    t.Y * t.TileHeight * _scale);
                 sp.Draw(_tileSheet,
                     new Rectangle(position.ToPoint(), new Point(t.TileWidth * _scale, t.TileHeight * _scale)),
                     new Rectangle(t.TileRef._sheetPosX * t.TileWidth, t.TileRef._sheetPosY * t.TileHeight,
@@ -325,12 +365,12 @@ namespace ComponentTileManager
             if (_player != null)
             {
                 sp.DrawString(font,  "Site pos " + _player.Site.PixelPosition.ToString(), _player.Site.PixelPosition, Color.White);
-                _player.Draw(sp, _tileSheet);
+                //_player.Draw(sp, _tileSheet);
 
                 foreach (var _enemy in _enemies)
                 {
                     sp.Draw(_txShowRectangle, _enemy.Range, new Color(0, 0, 0, 128));
-                    _enemy.Draw(sp, _tileSheet);
+                    //_enemy.Draw(sp, _tileSheet);
                 }
                 //if (_player.MyProjectile != null)
                 //    sp.DrawString(font, "ptp " + _player.Tileposition.ToString(), new Vector2(10, 10), Color.White);
@@ -345,74 +385,9 @@ namespace ComponentTileManager
                 tower.draw(sp);
             sp.End();
             base.Draw(gameTime);
-        }
-
-        public List<Tile> Path(Tile Start, Tile Finish)
-        {
-            if (Start == Finish)
-                return new List<Tile> { Start, Finish };
-            TileComparer compare = new TileComparer();
-            Tile Current = Start;
-            List<Tile> passable = _tileManager.ActiveLayer.Passable;
-            List<Tile> visited = new List<Tile>();  
-            Stack<Tile> frontier = new Stack<Tile>();
-            frontier.Push(Start);
-            int best = euclideanDistance(Start, Finish);
-            while (Current != null && Current != Finish)
-            {
-                visited.Add(Current);
-                // get Neighbours
-                var Neighbours = _tileManager.ActiveLayer.adjacentPassable(Current);
-                // discount those already visited
-                var NewNeighbours = Neighbours.Where(n => !visited.Contains(n, compare));
-                // Get best neighbours in decreasing order as they are about to 
-                // pushed onto the frontier
-                var NextNearestNeighbour = NewNeighbours
-                    .Select(nn => new { nn.X, nn.Y, Distance = ManhattanDistance(nn, Finish) })
-                    .OrderByDescending(d => d.Distance)
-                    .ToList();
-
-                // get each candidate and add to the frontier in order of Heuristic distance 
-                // furthest gets pushed first
-                foreach (var node in NextNearestNeighbour)
-                {
-                    Tile Nextnode = (from n in NewNeighbours
-                                     where n.X == node.X && n.Y == node.Y
-                                     select n)
-                             .FirstOrDefault();
-                    if (Nextnode != null)
-                        frontier.Push(Nextnode);
-                }
-                // Choose the next Neighbour as the shortest distance at the head of the stack
-                if (frontier.Count > 0)
-                     Current = frontier.Pop();
-                else return null;
 
             }
-            visited.Add(Finish);
-            return visited;
-        }
 
-        public int euclideanDistance(Tile first, Tile second)
-        {
-            if (first == second)
-                return 0;
-
-            Vector2 vfirst = new Vector2(first.X, first.Y);
-            Vector2 vsecond = new Vector2(second.X, second.Y);
-            int abs_X = Math.Abs(first.X - second.X);
-            int abs_Y = Math.Abs(first.Y - second.Y);
-            int distance = (int)Vector2.DistanceSquared(vfirst, vsecond);
-            return distance;
-        }
-        public int ManhattanDistance(Tile first, Tile second)
-        {
-            int abs_X = Math.Abs(first.X - second.X);
-            int abs_Y = Math.Abs(first.Y - second.Y);
-            return Math.Abs(abs_X + abs_Y);
-        }
-
-       
 
     }
 }

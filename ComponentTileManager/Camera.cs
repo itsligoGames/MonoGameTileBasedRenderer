@@ -71,10 +71,11 @@ namespace TileManagerNS
             }
         }
 
-        public Camera(Vector2 startPos, Vector2 bound)
+        public Camera(Vector2 startPos, Vector2 bound, Viewport view)
         {
             CamPos = startPos;
             WorldBound = bound;
+            _view = view;
         }
 
         public void move(Vector2 delta, Viewport v)

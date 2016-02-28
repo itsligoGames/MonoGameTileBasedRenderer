@@ -28,40 +28,50 @@ namespace AnimatedSprite
             }
         }
         private Camera _cam;
+        private float smoothingFactor = 0.01f;
 
-        public CrossHair(Camera cam, Vector2 userPosition, List<TileRef> cursor, int frameWidth, int frameHeight, float layerDepth) : base(userPosition, cursor, frameWidth, frameHeight, layerDepth)
+        public CrossHair(Game game, Camera cam, Vector2 userPosition, List<TileRef> cursor, int frameWidth, int frameHeight, float layerDepth) 
+                            : base(game, userPosition, cursor, frameWidth, frameHeight, layerDepth)
             {
             _cam = cam;
             }
 
         public override void Update(GameTime gametime)
         {
-            Tileposition = InputEngine.MousePosition / new Vector2(FrameWidth, FrameHeight)
+            if (InputEngine.CurrentPadState.IsConnected)
+            {
+                if (Math.Abs(InputEngine.CurrentPadState.ThumbSticks.Right.X) > 0 &&
+                    Math.Abs(InputEngine.CurrentPadState.ThumbSticks.Right.Y) > 0)
+                {
+                    Vector2 previousTilePos = TilePosition;
+                    Vector2 Movement = Vector2.Normalize(InputEngine.CurrentPadState.ThumbSticks.Right) * new Vector2(1,-1) * smoothingFactor;
+                    
+                    //InputEngine.CurrentPadState.ThumbSticks.Left / new Vector2(FrameWidth, FrameHeight)
+                    //                    + _cam.CamPos / new Vector2(FrameWidth, FrameHeight);
+                    Rectangle LocalviewBound = new Rectangle(((_cam.CamPos) / new Vector2(FrameWidth, FrameHeight)).ToPoint(),
+                                                new Point((_cam.View.Width ) / FrameWidth, (_cam.View.Height)/ FrameHeight));
+                    if(!LocalviewBound.Contains((TilePosition + Movement).ToPoint()))
+                    {
+                        TilePosition = previousTilePos;
+                    }
+                    TilePosition += Movement;
+                    //Tileposition = Vector2.Clamp(Tileposition, _cam.CamPos,
+                    //    new Vector2(_cam.View.Bounds.Width, _cam.View.Bounds.Height));
+                }
+            }
+            else
+            {
+                TilePosition = InputEngine.MousePosition / new Vector2(FrameWidth, FrameHeight)
                                 + _cam.CamPos / new Vector2(FrameWidth, FrameHeight);
-
-            //_target = InputEngine.MousePosition;
-
-            // / new Vector2(FrameWidth,FrameHeight);            
-            //if (Keyboard.GetState().IsKeyDown(Keys.Right))
-            //    this.Tileposition += new Vector2(1, 0) ;
-            //if (Keyboard.GetState().IsKeyDown(Keys.Left))
-            //    this.Tileposition += new Vector2(-1, 0);
-            //if (Keyboard.GetState().IsKeyDown(Keys.Up))
-            //    this.Tileposition += new Vector2(0, -1);
-            //if (Keyboard.GetState().IsKeyDown(Keys.Down))
-            //    this.Tileposition += new Vector2(0, 1) ;
-            // Make sure the Cross Hair stays in the bounds see previous lab for details
-            //position = Vector2.Clamp(position, Vector2.Zero,
-            //                                new Vector2(gameScreen.Width - spriteWidth,
-            //                                            gameScreen.Height - spriteHeight));
+            }
 
             base.Update(gametime);
         }
 
-        public override void Draw(SpriteBatch spriteBatch,Texture2D tx)
+        public override void Draw(GameTime gameTime)
         {
-
-            base.Draw(spriteBatch,tx);
+            base.Draw(gameTime);
         }
+
     }
 }

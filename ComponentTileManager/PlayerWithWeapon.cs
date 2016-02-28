@@ -35,7 +35,7 @@ namespace AnimatedSprite
 
         public Vector2 CentreTilePos
         {
-            get { return Tileposition + Vector2.One/2; }
+            get { return TilePosition + Vector2.One/2; }
         }
 
         public float speed = 0.2f;
@@ -117,10 +117,10 @@ namespace AnimatedSprite
 
         private Camera _cam;
 
-        public PlayerWithWeapon(Camera cam, Vector2 userPosition, Vector2 tileBounds,
+        public PlayerWithWeapon(Game game, Camera cam, Vector2 userPosition, Vector2 tileBounds,
             List<TileRef> InitialSheetRefs, 
                 int frameWidth, int frameHeight, float layerDepth)
-            : base(userPosition, InitialSheetRefs, frameWidth, frameHeight, layerDepth)
+            : base(game, userPosition, InitialSheetRefs, frameWidth, frameHeight, layerDepth)
         {
             _cam = cam;
             _directionFrames.Add(InitialSheetRefs); // Stopped
@@ -130,7 +130,7 @@ namespace AnimatedSprite
             _directionFrames.Add(new List<TileRef>()); // Down All to be set by setFrameSet
             TileBound = tileBounds;
             
-            Site = new CrossHair(_cam, userPosition, new List<TileRef>() { new TileRef(11, 6, 0)}, frameWidth, frameHeight,2f);
+            Site = new CrossHair(game, _cam, userPosition, new List<TileRef>() { new TileRef(11, 6, 0)}, frameWidth, frameHeight,2f);
             }
 
         public void loadProjectile(Projectile r)
@@ -143,46 +143,54 @@ namespace AnimatedSprite
             _directionFrames[(int)d] = sheetRefs;
         }
 
-        public void pixelMove(List<SimpleSprite> collisionSet)
+        public void tileMove(List<SimpleSprite> collisionSet)
         {
             DIRECTION oldDirection = Direction;
             // remember the old TilePosition in case we need to  move back
-            Vector2 PreviousTilePosition = Tileposition;
+            Vector2 PreviousTilePosition = TilePosition;
+
+            // Rotate toward the site if sight is moving
+            if(InputEngine.CurrentPadState.ThumbSticks.Right.LengthSquared() > 0)
+            {
+                // reset the original direction facing
+                Direction = DIRECTION.LEFT;
+                followPosition(Site.PixelPosition);
+            }
             // Rotate with the mouse
             if ( 
                 InputEngine.PreviousMouseState.Position.ToVector2() 
                         != InputEngine.MousePosition)
             {
+                // reset the original direction facing
                 Direction = DIRECTION.LEFT;
-                //angleOfRotation = 0;
                 followPosition(Site.PixelPosition);
             }
 
-            if (InputEngine.IsKeyHeld(Keys.Right))
+            if (InputEngine.IsKeyHeld(Keys.Right) || InputEngine.CurrentPadState.DPad.Right == ButtonState.Pressed)
             {
                 angleOfRotation = 0f;
-                Tileposition += new Vector2(1, 0) * speed;
+                TilePosition += new Vector2(1, 0) * speed;
                 _direction = DIRECTION.RIGHT;
                 MovingState = STATE.MOVING;
             }
-            if (InputEngine.IsKeyHeld(Keys.Left))
+            if (InputEngine.IsKeyHeld(Keys.Left) || InputEngine.CurrentPadState.DPad.Left == ButtonState.Pressed)
             {
                 angleOfRotation = 0f;
-                Tileposition += new Vector2(-1, 0) * speed;
+                TilePosition += new Vector2(-1, 0) * speed;
                 _direction = DIRECTION.LEFT;
                 MovingState = STATE.MOVING;
             }
-            if (InputEngine.IsKeyHeld(Keys.Up))
+            if (InputEngine.IsKeyHeld(Keys.Up) || InputEngine.CurrentPadState.DPad.Up == ButtonState.Pressed)
             {
                 angleOfRotation = 0f;
-                Tileposition += new Vector2(0, -1) * speed;
+                TilePosition += new Vector2(0, -1) * speed;
                 _direction = DIRECTION.UP;
                 MovingState = STATE.MOVING;
             }
-            if (InputEngine.IsKeyHeld(Keys.Down))
+            if (InputEngine.IsKeyHeld(Keys.Down) || InputEngine.CurrentPadState.DPad.Down == ButtonState.Pressed)
             {
                 angleOfRotation = 0f;
-                Tileposition += new Vector2(0, 1) * speed;
+                TilePosition += new Vector2(0, 1) * speed;
                 _direction = DIRECTION.DOWN;
                 MovingState = STATE.MOVING;
             }
@@ -190,7 +198,7 @@ namespace AnimatedSprite
             {
                 if (item.BoundingRect.Intersects(DrawRectangle))
                 {
-                    Tileposition = PreviousTilePosition;
+                    TilePosition = PreviousTilePosition;
                     MovingState = STATE.STILL;
                     item.tint = Color.Red;
                     break;
@@ -203,9 +211,16 @@ namespace AnimatedSprite
                 Frames = _directionFrames[(int)_direction];
                 CurrentFrame = 0;
             }
-            Tileposition = Vector2.Clamp(Tileposition, Vector2.Zero, TileBound - Vector2.One);
-            
-            
+            // Keep the Player in the tile map
+            TilePosition = Vector2.Clamp(TilePosition, Vector2.Zero, TileBound - Vector2.One);
+            // keep the site in view of the player
+            if (MovingState == STATE.MOVING)
+                Site.TilePosition += TilePosition - PreviousTilePosition;
+            else Site.TilePosition -= TilePosition - PreviousTilePosition;
+            // Keep the Site in the TileMap
+            Site.TilePosition = Vector2.Clamp(Site.TilePosition, Vector2.Zero, TileBound - Vector2.One);
+
+
         }
 
         public void checkforMovement()
@@ -218,25 +233,25 @@ namespace AnimatedSprite
                 if(InputEngine.IsKeyHeld(Keys.Right))
                 
                 {
-                    TargetTilePos = Tileposition + new Vector2(1, 0);
+                    TargetTilePos = TilePosition + new Vector2(1, 0);
                     _direction = DIRECTION.RIGHT;
                     MovingState = STATE.MOVING;
                 }
                 if (InputEngine.IsKeyHeld(Keys.Left))
                 {
-                    TargetTilePos = Tileposition + new Vector2(-1, 0);
+                    TargetTilePos = TilePosition + new Vector2(-1, 0);
                     _direction = DIRECTION.LEFT;
                     MovingState = STATE.MOVING;
                 }
                 if (InputEngine.IsKeyHeld(Keys.Up))
                 {
-                    TargetTilePos = Tileposition + new Vector2( 0, -1);
+                    TargetTilePos = TilePosition + new Vector2( 0, -1);
                     _direction = DIRECTION.UP;
                     MovingState = STATE.MOVING;
                 }
                 if (InputEngine.IsKeyHeld(Keys.Down))
                 {
-                    TargetTilePos = Tileposition + new Vector2(0, 1);
+                    TargetTilePos = TilePosition + new Vector2(0, 1);
                     _direction = DIRECTION.DOWN;
                     MovingState = STATE.MOVING;
                 }
@@ -247,19 +262,19 @@ namespace AnimatedSprite
 
             else 
             {
-                Vector2 targetDirection = TargetTilePos - Tileposition;
+                Vector2 targetDirection = TargetTilePos - TilePosition;
                 Vector2 nTarget = Vector2.Normalize(targetDirection);
-                float distance = Vector2.DistanceSquared(Tileposition, TargetTilePos);
+                float distance = Vector2.DistanceSquared(TilePosition, TargetTilePos);
                 if (distance > speed)
                 {
-                    Tileposition += nTarget * speed;
+                    TilePosition += nTarget * speed;
                 }
                 else
                 {
                     MovingState = STATE.STILL;
-                    Tileposition = TargetTilePos;
-                    CurrentPlayerTile.X = (int)Tileposition.X;
-                    CurrentPlayerTile.Y = (int)Tileposition.Y;
+                    TilePosition = TargetTilePos;
+                    CurrentPlayerTile.X = (int)TilePosition.X;
+                    CurrentPlayerTile.Y = (int)TilePosition.Y;
                 }
 
             }
@@ -366,10 +381,10 @@ namespace AnimatedSprite
             if (MyProjectile != null 
                 && MyProjectile.ProjectileState == Projectile.PROJECTILE_STATE.STILL)
             {
-                myProjectile.Tileposition = Tileposition;
+                myProjectile.TilePosition = TilePosition;
                 // fire the rocket and it looks for the target
-                if (InputEngine.IsKeyHeld(Keys.Space) || InputEngine.IsMouseLeftClick())
-                    MyProjectile.fire(Site.Tileposition);
+                if (InputEngine.IsKeyHeld(Keys.Space) || InputEngine.IsMouseLeftClick() || InputEngine.CurrentPadState.Buttons.A == ButtonState.Pressed)
+                    MyProjectile.fire(Site.TilePosition);
             }
                 
             if (MyProjectile != null)
@@ -382,20 +397,35 @@ namespace AnimatedSprite
             }
             base.Update(gameTime);
         }
-            
-        public override void Draw(SpriteBatch spriteBatch,Texture2D tx)
+
+        public override void Draw(GameTime gameTime)
         {
-            base.Draw(spriteBatch,tx);
-            if (MyProjectile != null && MyProjectile.ProjectileState != Projectile.PROJECTILE_STATE.STILL)
-                MyProjectile.Draw(spriteBatch, tx);
-            if (Site != null)
-            {
-                Site.Draw(spriteBatch, tx);
-            }
+            //    base.Draw(spriteBatch,tx);
+            //    if (MyProjectile != null && MyProjectile.ProjectileState != Projectile.PROJECTILE_STATE.STILL)
+            //        MyProjectile.Draw(spriteBatch, tx);
+            //    if (Site != null)
+            //    {
+            //        Site.Draw(spriteBatch, tx);
+            //    }
 
             if (Hbar != null)
-                Hbar.draw(spriteBatch);
+                Hbar.draw(Game.Services.GetService<SpriteBatch>());
+
+            base.Draw(gameTime);
         }
+        //public override void Draw(SpriteBatch spriteBatch,Texture2D tx)
+        //{
+        //    base.Draw(spriteBatch,tx);
+        //    if (MyProjectile != null && MyProjectile.ProjectileState != Projectile.PROJECTILE_STATE.STILL)
+        //        MyProjectile.Draw(spriteBatch, tx);
+        //    if (Site != null)
+        //    {
+        //        Site.Draw(spriteBatch, tx);
+        //    }
+
+        //    if (Hbar != null)
+        //        Hbar.draw(spriteBatch);
+        //}
 
     }
 }

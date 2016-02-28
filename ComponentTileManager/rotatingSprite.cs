@@ -17,7 +17,7 @@ namespace AnimatedSprite
         int health = 100;
         private Rectangle range;
         private int tileRangeDistance = 4;
-        float rotationSpeed = .5f;
+        float rotationSpeed = .02f;
         public Rectangle Range
         {
             get
@@ -60,8 +60,8 @@ namespace AnimatedSprite
 
         HealthBar hbar;
 
-        public RotatingSprite(Vector2 userPosition, List<TileRef> sheetRefs, int frameWidth, int frameHeight, float layerDepth)
-            : base(userPosition, sheetRefs, frameWidth, frameHeight, layerDepth)
+        public RotatingSprite(Game game, Vector2 userPosition, List<TileRef> sheetRefs, int frameWidth, int frameHeight, float layerDepth)
+            : base(game,userPosition, sheetRefs, frameWidth, frameHeight, layerDepth)
         {
             
         }
@@ -108,10 +108,9 @@ namespace AnimatedSprite
             base.Update(gametime);
         }
 
-        public override void Draw(SpriteBatch spriteBatch, Texture2D tx)
+        public override void Draw(GameTime gameTime)
         {
-
-            base.Draw(spriteBatch, tx);
+            base.Draw(gameTime);
         }
         /// <summary>
         /// Returns the angle expressed in radians between -Pi and Pi.

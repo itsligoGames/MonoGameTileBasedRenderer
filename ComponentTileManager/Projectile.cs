@@ -32,13 +32,13 @@ namespace AnimatedSprite
 
 
 
-        public Projectile(Vector2 userPosition, List<TileRef> projectiletRefs, 
-            List<TileRef> explosionRef, int frameWidth, int frameHeight, float layerDepth) : base(userPosition, projectiletRefs, frameWidth, frameHeight, layerDepth)
+        public Projectile(Game game, Vector2 userPosition, List<TileRef> projectiletRefs, 
+            List<TileRef> explosionRef, int frameWidth, int frameHeight, float layerDepth) : base(game, userPosition, projectiletRefs, frameWidth, frameHeight, layerDepth)
         {
                 Target = Vector2.Zero;
                 StartPosition = userPosition;
                 ProjectileState = PROJECTILE_STATE.STILL;
-            explosion = new AnimateSheetSprite(userPosition, explosionRef, frameWidth, FrameHeight, layerDepth);
+            explosion = new AnimateSheetSprite(game,userPosition, explosionRef, frameWidth, FrameHeight, layerDepth);
             }
             public override void Update(GameTime gametime)
             {
@@ -52,15 +52,15 @@ namespace AnimatedSprite
                     // Velocity
                     case PROJECTILE_STATE.FIRING:
                         this.Visible = true;                       
-                        Tileposition = Vector2.Lerp(Tileposition, Target, 0.01f * RocketVelocity);
+                        TilePosition = Vector2.Lerp(TilePosition, Target, 0.01f * RocketVelocity);
                          // rotate towards the Target
-                        this.angleOfRotation = TurnToFace(Tileposition,
+                        this.angleOfRotation = TurnToFace(TilePosition,
                                                 Target, angleOfRotation, 1f);
-                    if (Vector2.Distance(Tileposition, Target) < .02f)
+                    if (Vector2.Distance(TilePosition, Target) < .02f)
                         projectileState = PROJECTILE_STATE.EXPOLODING;
                         break;
                     case PROJECTILE_STATE.EXPOLODING:
-                        explosion.Tileposition = Target;
+                        explosion.TilePosition = Target;
                         explosion.Visible = true;
                         break;
                 }
@@ -76,7 +76,7 @@ namespace AnimatedSprite
                     explosion.Visible = false;
                     ExplosionTimer = 0;
                     projectileState = PROJECTILE_STATE.STILL;
-                    Tileposition = StartPosition;
+                    TilePosition = StartPosition;
                 }
 
                 base.Update(gametime);
@@ -85,16 +85,19 @@ namespace AnimatedSprite
             {
             projectileState = PROJECTILE_STATE.FIRING;
                 Target = SiteTarget;
-            }   
-            public override void Draw(SpriteBatch spriteBatch,Texture2D tx)
-            {
-                base.Draw(spriteBatch,tx);
+            }  
+        
+         
+       
+            //public override void Draw(SpriteBatch spriteBatch,Texture2D tx)
+            //{
+            //    base.Draw(spriteBatch,tx);
                 
-                if (explosion.Visible)
-                    explosion.Draw( spriteBatch,tx);
+            //    if (explosion.Visible)
+            //        explosion.Draw( spriteBatch,tx);
                 
 
-            }
+            //}
 
     }
 }

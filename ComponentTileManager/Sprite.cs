@@ -9,7 +9,7 @@ using TileManagerNS;
 
 namespace AnimatedSprite
 {
-    public class AnimateSheetSprite
+    public class AnimateSheetSprite : DrawableGameComponent
     {
         //sprite texture and position
         
@@ -28,7 +28,7 @@ namespace AnimatedSprite
         }
 
         private Vector2 _tileposition;
-        public Vector2 Tileposition
+        public Vector2 TilePosition
         {
             get
             {
@@ -65,8 +65,8 @@ namespace AnimatedSprite
         {
             get
             {
-                return new Vector2(Tileposition.X * FrameWidth, 
-                                    Tileposition.Y * FrameHeight) ;
+                return new Vector2(TilePosition.X * FrameWidth, 
+                                    TilePosition.Y * FrameHeight) ;
             }
 
         }
@@ -113,11 +113,11 @@ namespace AnimatedSprite
 
         protected List<TileRef> Frames = new List<TileRef>();
         private int _currentFrame;
-
-        public AnimateSheetSprite(Vector2 userPosition, List<TileRef> sheetRefs, int frameWidth, int frameHeight, float layerDepth)
+        
+        public AnimateSheetSprite(Game g, Vector2 userPosition, List<TileRef> sheetRefs, int frameWidth, int frameHeight, float layerDepth) : base(g)
         {
             spriteDepth = layerDepth;
-            Tileposition = userPosition;
+            TilePosition = userPosition;
             visible = true;
             FrameHeight = frameHeight;
             FrameWidth = frameWidth;
@@ -126,10 +126,11 @@ namespace AnimatedSprite
             origin = new Vector2(FrameWidth / 2, FrameHeight/ 2);
             angleOfRotation = 0;
             CurrentFrame = 0;
+            g.Components.Add(this);
         }
 
 
-        public virtual void Update(GameTime gametime)
+        public override void Update(GameTime gametime)
         {
             timer += (float)gametime.ElapsedGameTime.Milliseconds;
 
@@ -175,18 +176,28 @@ namespace AnimatedSprite
             return otherBound.Contains(myBound);
         }
 
-
-
-        public virtual void Draw(SpriteBatch spriteBatch, Texture2D SpriteSheet)
+        public override void Draw(GameTime gameTime)
         {
+            SpriteBatch spriteBatch = Game.Services.GetService<SpriteBatch>();
+            // Could do Texture2D as a static class with dictionary of textures
+            // if different textures needed
+            Texture2D SpriteSheet = Game.Services.GetService<Texture2D>();
+            Camera Cam = Game.Services.GetService<Camera>();
+
             if (visible)
             {
+                spriteBatch.Begin(SpriteSortMode.Immediate,
+                        BlendState.AlphaBlend, null, null, null, null, Cam.CurrentCameraTranslation);
                 spriteBatch.Draw(SpriteSheet,
                     PixelPosition + origin, sourceRectangle,
                     Color.White, angleOfRotation, origin,
                     Scale, SpriteEffects.None, spriteDepth);
+                spriteBatch.End();
             }
-        }       
+
+            base.Draw(gameTime);
+        }
+
 
     }
 }
