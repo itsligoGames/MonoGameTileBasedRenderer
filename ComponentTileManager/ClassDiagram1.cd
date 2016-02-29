@@ -38,35 +38,35 @@
   <Class Name="AnimatedSprite.CrossHair" Collapsed="true">
     <Position X="0.5" Y="1.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAQAAAAAAAAAAgAAAAAAACAIQAAAAAAAAAAAAAAAAAA=</HashCode>
+      <HashCode>AAQAAABAAAAAAgAAAAAAACAIQAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>CrossHair.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="AnimatedSprite.PlayerWithWeapon" Collapsed="true">
-    <Position X="5" Y="1.75" Width="1.5" />
+    <Position X="0.5" Y="2.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAQCgIAQCQAEggCAAKIAAAQICEIEAQQAAAAIAAEAAAA=</HashCode>
+      <HashCode>AAQCgIAQSQBEggCAAKIAAAQIAEIEAQQAAAAIAAEAAAA=</HashCode>
       <FileName>PlayerWithWeapon.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="AnimatedSprite.Projectile" Collapsed="true">
-    <Position X="2.75" Y="3.25" Width="1.5" />
+    <Position X="2.5" Y="2.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAQCAAAIEAAgQgAAIAAABCAAAAACBAAABAAAAAAAAAA=</HashCode>
+      <HashCode>AAQCAAAIEAAgQAAAIAAABCAAAAACBAAABAAAAAAAAAA=</HashCode>
       <FileName>Projectile.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="AnimatedSprite.RotatingSprite" Collapsed="true">
     <Position X="2.75" Y="1.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAQAAgAAIAAAAgAAAAAAAAAAAAAAAAAAAAAAAQAAAAA=</HashCode>
+      <HashCode>CAQACgAIKAACCgAAAAAAAAQAAAAEAIAAAAJAAQAAAAg=</HashCode>
       <FileName>rotatingSprite.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="AnimatedSprite.AnimateSheetSprite" Collapsed="true">
     <Position X="2.75" Y="0.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>iASAAAAAAAAAAgAAAAoAAABikCAABEEIAAQACAAAgIE=</HashCode>
+      <HashCode>iASQAAAAAAAAAgAAAAoAAABikCAABEEIAAQACAAAkIE=</HashCode>
       <FileName>Sprite.cs</FileName>
     </TypeIdentifier>
   </Class>
@@ -86,30 +86,22 @@
   </Class>
   <Class Name="ComponentTileManager.TileRenderer">
     <Position X="11.25" Y="1.5" Width="1.5" />
-    <NestedTypes>
-      <Class Name="ComponentTileManager.TileRenderer.TileComparer" Collapsed="true">
-        <TypeIdentifier>
-          <NewMemberFileName>TileRenderer.cs</NewMemberFileName>
-        </TypeIdentifier>
-        <Lollipop Position="0.2" />
-      </Class>
-    </NestedTypes>
     <TypeIdentifier>
-      <HashCode>IBQAAAEAAQACIgMACCAADgIEAgCgggAAAAgggAgQEGA=</HashCode>
+      <HashCode>IBQAAAACAQgCIgEAACEATgIEBgCgggAAAAggkAgAEGA=</HashCode>
       <FileName>TileRenderer.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Engine.Engines.InputEngine" Collapsed="true">
     <Position X="9.25" Y="1.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AIQgAICAgAAAAACBAAAIAQAAqAgAARAAAigEAAATCAI=</HashCode>
+      <HashCode>AMQgAICAgAAAAACBAAAIAQAAqAgAARAAAigEAAATCAI=</HashCode>
       <FileName>InputEngine.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Sprites.SimpleSprite" Collapsed="true">
     <Position X="7.5" Y="1.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AgAAAAAQAIAAAAAgAAIAAAAAAAAAABAIAAAAAAAAAAA=</HashCode>
+      <HashCode>AgAAAAAQAIAAAAAgAAIAAAAAAACAABAIAAAAAAAAAAA=</HashCode>
       <FileName>SimpleSprite.cs</FileName>
     </TypeIdentifier>
   </Class>
@@ -146,6 +138,20 @@
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAEIAACgAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>models.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ComponentTileManager.Sentry" Collapsed="true">
+    <Position X="4.25" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAQAAAAAAABAAgAAAAAAAAAAAAAAAAQAAAAAAQDAAAA=</HashCode>
+      <FileName>Sentry.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ComponentTileManager.FollowingEnemy" Collapsed="true">
+    <Position X="4.25" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQCAAAAIAAgAiAAEBAAAAgACggAAQAAAQAAAREBAAA=</HashCode>
+      <FileName>FollowingEnemy.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Enum Name="AnimatedSprite.DIRECTION" Collapsed="true">

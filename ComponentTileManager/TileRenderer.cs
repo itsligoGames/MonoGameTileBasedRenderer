@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Sprites;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using TileManagerNS;
@@ -92,7 +93,7 @@ namespace ComponentTileManager
             setupCollisionMask();
             // Create an enemy object that will rotate towards the player
             //Tile enemyTile = _tileManager.ActiveLayer.Impassable.First();
-            //setupEnemies(5, tileWidth, tileHeight);
+            setupEnemies(5, tileWidth, tileHeight);
             //showPathTiles(_path);
             createSpawnPositions();
             setupTowers();
@@ -177,6 +178,17 @@ namespace ComponentTileManager
         public void setupEnemies(int EnemyCount, int tileWidth, int tileHeight)
         {
             _enemies.Clear();
+
+
+            List<Sentry> toDelete = new List<Sentry>();
+
+            foreach (var item in Game.Components)
+                if(item.GetType() == typeof(Sentry))
+                    toDelete.Add((Sentry)item);
+
+            foreach (var item in toDelete)
+                Game.Components.Remove(item);
+
             // use linq queries on the impassible tiles to choose random locations for enemies
             // First query introduce a random guid into a sub set of locations of impassible tiles
             var enemyPlaces = _tileManager.ActiveLayer.Impassable
@@ -266,7 +278,6 @@ namespace ComponentTileManager
             {
                 // pixelMove is now tileMove
                 _player.tileMove(_collisionSet);
-                _player.Update(gameTime);
                 _tileManager.CurrentTile = _player.CurrentPlayerTile =
                     _tileManager.ActiveLayer.getPassableTileAt((int)Math.Round(_player.TilePosition.X),
                                             (int)Math.Round(_player.TilePosition.Y));
@@ -275,13 +286,13 @@ namespace ComponentTileManager
                 {
                     _player.HitTest(_enemy);
                     _enemy.follow(_player);
-                    _enemy.Update(gameTime);
                     // Test if there is an explosion on the enemy from the player projectile
                     _enemy.HitTest(_player);
 
                 }
 
                 var deadFollowers = _followers.Where(s => s.Health <= 0).ToList();
+
                 foreach (FollowingEnemy s in deadFollowers)
                 {
                     _followers.Remove(s); // Must remove the from the local collection 
@@ -294,7 +305,6 @@ namespace ComponentTileManager
                     // Test if there is an explosion on the enemy from the player projectile
                     _player.HitTest(_enemy);
                     _enemy.follow(_player);
-                    _enemy.Update(gameTime);
                     // Test if there is an explosion on the enemy from the player projectile
                     _enemy.HitTest(_player);
                 }
