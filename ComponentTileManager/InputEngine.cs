@@ -11,8 +11,15 @@ using Microsoft.Xna.Framework.Input.Touch;
 
 namespace Engine.Engines
 {
+    public enum Direction { None, Up, Down, Left, Right }
+
     public class InputEngine : GameComponent
     {
+
+        // You could make this user-configurable.
+        const float Deadzone = 0.8f;
+        const float DiagonalAvoidance = 0.2f;
+
         public static Color clearColor;
 #if ANDROID
         static TouchCollection currentTouchState;
@@ -67,7 +74,39 @@ namespace Engine.Engines
             _game.Components.Add(this);
         }
 
-        
+        public static Direction GetDirection(Vector2 gamepadThumbStick)
+        {
+            // Get the length and prevent something from happening
+            // if it's in our deadzone.
+            var length = gamepadThumbStick.Length();
+            if (length < Deadzone)
+                return Direction.None;
+
+            var absX = Math.Abs(gamepadThumbStick.X);
+            var absY = Math.Abs(gamepadThumbStick.Y);
+            var absDiff = Math.Abs(absX - absY);
+
+            // We don't like values that are too close to each other
+            // i.e. borderline diagonal.
+            if (absDiff < length * DiagonalAvoidance)
+                return Direction.None;
+
+            if (absX > absY)
+            {
+                if (gamepadThumbStick.X > 0)
+                    return Direction.Right;
+                else
+                    return Direction.Left;
+            }
+            else
+            {
+                if (gamepadThumbStick.Y > 0)
+                    return Direction.Up;
+                else
+                    return Direction.Down;
+            }
+        }
+
         public static void ClearState()
         {
 #if WINDOWS

@@ -28,7 +28,7 @@ namespace AnimatedSprite
             }
         }
         private Camera _cam;
-        private float smoothingFactor = 0.01f;
+        private float smoothingFactor = 0.08f;
 
         public CrossHair(Game game, Camera cam, Vector2 userPosition, List<TileRef> cursor, int frameWidth, int frameHeight, float layerDepth) 
                             : base(game, userPosition, cursor, frameWidth, frameHeight, layerDepth)
@@ -40,21 +40,32 @@ namespace AnimatedSprite
         {
             if (InputEngine.CurrentPadState.IsConnected)
             {
-                if (Math.Abs(InputEngine.CurrentPadState.ThumbSticks.Right.X) > 0 &&
-                    Math.Abs(InputEngine.CurrentPadState.ThumbSticks.Right.Y) > 0)
+                if (InputEngine.CurrentPadState.ThumbSticks.Right.Length() > 0)
+                
                 {
                     Vector2 previousTilePos = TilePosition;
+                    // Thumbstick moves in the opposite direction for Y hence adjust with  new Vector2(1,-1)
                     Vector2 Movement = Vector2.Normalize(InputEngine.CurrentPadState.ThumbSticks.Right) * new Vector2(1,-1) * smoothingFactor;
                     
                     //InputEngine.CurrentPadState.ThumbSticks.Left / new Vector2(FrameWidth, FrameHeight)
                     //                    + _cam.CamPos / new Vector2(FrameWidth, FrameHeight);
                     Rectangle LocalviewBound = new Rectangle(((_cam.CamPos) / new Vector2(FrameWidth, FrameHeight)).ToPoint(),
                                                 new Point((_cam.View.Width ) / FrameWidth, (_cam.View.Height)/ FrameHeight));
-                    if(!LocalviewBound.Contains((TilePosition + Movement).ToPoint()))
+                    
+                    // Get the player from the Game components
+                    PlayerWithWeapon player = (PlayerWithWeapon)Game.Components.Where(p => p.GetType() == typeof(PlayerWithWeapon)).FirstOrDefault();
+                    // Make sure the site stays in the local view range
+                    if (!LocalviewBound.Contains((TilePosition + Movement).ToPoint()))
                     {
                         TilePosition = previousTilePos;
                     }
-                    TilePosition += Movement;
+                    // Make sure the site 
+                    else if(player != null && !player.Range.Contains((PixelPosition + Movement * new Vector2(FrameWidth,FrameHeight)).ToPoint()))
+                    {
+                        TilePosition = previousTilePos;
+                    }
+
+                    else TilePosition += Movement;
                     //Tileposition = Vector2.Clamp(Tileposition, _cam.CamPos,
                     //    new Vector2(_cam.View.Bounds.Width, _cam.View.Bounds.Height));
                 }
@@ -64,7 +75,7 @@ namespace AnimatedSprite
                 TilePosition = InputEngine.MousePosition / new Vector2(FrameWidth, FrameHeight)
                                 + _cam.CamPos / new Vector2(FrameWidth, FrameHeight);
             }
-
+            
             base.Update(gametime);
         }
 

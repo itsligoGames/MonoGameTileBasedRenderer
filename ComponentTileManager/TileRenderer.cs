@@ -2,6 +2,7 @@
 using Engine.Engines;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Sprites;
 using System;
 using System.Collections.Generic;
@@ -295,6 +296,11 @@ namespace ComponentTileManager
 
         public override void Update(GameTime gameTime)
         {
+            // catch end
+            if (InputEngine.CurrentPadState.Buttons.Back == ButtonState.Pressed 
+                        || InputEngine.CurrentKeyState.IsKeyDown(Keys.Escape))
+                Game.Exit();
+            // look after player
             if (player != null)
             {
                 // pixelMove is now tileMove
@@ -508,13 +514,15 @@ namespace ComponentTileManager
             if (player != null)
             {
                 sp.DrawString(font,  "Site pos " + player.Site.PixelPosition.ToString(), player.Site.PixelPosition, Color.White);
+                sp.Draw(_txShowRectangle, player.Range, new Color(0, 0, 0, 128));
                 //_player.Draw(sp, _tileSheet);
 
                 foreach (var _enemy in _followers)
-                {
                     sp.Draw(_txShowRectangle, _enemy.Range, new Color(0, 0, 0, 128));
-                    
-                }
+                foreach (var _enemy in _enemies)
+                    sp.Draw(_txShowRectangle, _enemy.Range, new Color(0, 0, 0, 128));
+
+
                 //if (_player.MyProjectile != null)
                 //    sp.DrawString(font, "ptp " + _player.Tileposition.ToString(), new Vector2(10, 10), Color.White);
                 //    sp.DrawString(font, "prtp " + _player.MyProjectile.Tileposition.ToString(), new Vector2(10, 30), Color.White);

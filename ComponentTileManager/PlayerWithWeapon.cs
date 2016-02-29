@@ -38,7 +38,7 @@ namespace AnimatedSprite
             get { return TilePosition + Vector2.One/2; }
         }
 
-        public float speed = 0.2f;
+            public float speed = 0.1f;
             public Vector2 TargetTilePos;
             public STATE MovingState = STATE.STILL;
 
@@ -129,7 +129,8 @@ namespace AnimatedSprite
             _directionFrames.Add(new List<TileRef>()); // UP
             _directionFrames.Add(new List<TileRef>()); // Down All to be set by setFrameSet
             TileBound = tileBounds;
-            DamageRate = 10;            
+            DamageRate = 10;
+            tileRangeDistance = 7; // Clamp the CrossHair based on the Range Rectangle
             Site = new CrossHair(game, _cam, userPosition, new List<TileRef>() { new TileRef(11, 6, 0)}, frameWidth, frameHeight,2f);
             }
 
@@ -165,28 +166,32 @@ namespace AnimatedSprite
                 followPosition(Site.PixelPosition);
             }
 
-            if (InputEngine.IsKeyHeld(Keys.Right) || InputEngine.IsKeyHeld(Keys.D) || InputEngine.CurrentPadState.DPad.Right == ButtonState.Pressed)
+            if (InputEngine.IsKeyHeld(Keys.Right) || InputEngine.IsKeyHeld(Keys.D) 
+                || InputEngine.GetDirection(InputEngine.CurrentPadState.ThumbSticks.Left) == Engine.Engines.Direction.Right)
             {
                 angleOfRotation = 0f;
                 TilePosition += new Vector2(1, 0) * speed;
                 _direction = DIRECTION.RIGHT;
                 MovingState = STATE.MOVING;
             }
-            if (InputEngine.IsKeyHeld(Keys.Left)|| InputEngine.IsKeyHeld(Keys.A) || InputEngine.CurrentPadState.DPad.Left == ButtonState.Pressed)
+            if (InputEngine.IsKeyHeld(Keys.Left)|| InputEngine.IsKeyHeld(Keys.A) 
+                || InputEngine.GetDirection(InputEngine.CurrentPadState.ThumbSticks.Left) == Engine.Engines.Direction.Left)
             {
                 angleOfRotation = 0f;
                 TilePosition += new Vector2(-1, 0) * speed;
                 _direction = DIRECTION.LEFT;
                 MovingState = STATE.MOVING;
             }
-            if (InputEngine.IsKeyHeld(Keys.Up) || InputEngine.IsKeyHeld(Keys.W) || InputEngine.CurrentPadState.DPad.Up == ButtonState.Pressed)
+            if (InputEngine.IsKeyHeld(Keys.Up) || InputEngine.IsKeyHeld(Keys.W) 
+                || InputEngine.GetDirection(InputEngine.CurrentPadState.ThumbSticks.Left) == Engine.Engines.Direction.Up)
             {
                 angleOfRotation = 0f;
                 TilePosition += new Vector2(0, -1) * speed;
                 _direction = DIRECTION.UP;
                 MovingState = STATE.MOVING;
             }
-            if (InputEngine.IsKeyHeld(Keys.Down) || InputEngine.IsKeyHeld(Keys.S) || InputEngine.CurrentPadState.DPad.Down == ButtonState.Pressed)
+            if (InputEngine.IsKeyHeld(Keys.Down) || InputEngine.IsKeyHeld(Keys.S) 
+                || InputEngine.GetDirection(InputEngine.CurrentPadState.ThumbSticks.Left) == Engine.Engines.Direction.Down)
             {
                 angleOfRotation = 0f;
                 TilePosition += new Vector2(0, 1) * speed;
@@ -218,7 +223,7 @@ namespace AnimatedSprite
             else Site.TilePosition -= TilePosition - PreviousTilePosition;
             // Keep the Site in the TileMap
             Site.TilePosition = Vector2.Clamp(Site.TilePosition, Vector2.Zero, TileBound - Vector2.One);
-
+            
 
         }
 
@@ -374,19 +379,20 @@ namespace AnimatedSprite
 
         public override void Update(GameTime gameTime)
         {
-            if(Site != null)
-                Site.Update(gameTime);
+            //if(Site != null)
+            //    Site.Update(gameTime);
             if (MyProjectile != null 
                 && MyProjectile.ProjectileState == Projectile.PROJECTILE_STATE.STILL)
             {
                 myProjectile.TilePosition = TilePosition;
                 // fire the rocket and it looks for the target
-                if (InputEngine.IsKeyHeld(Keys.Space) || InputEngine.IsMouseLeftClick() || InputEngine.CurrentPadState.Buttons.A == ButtonState.Pressed)
+                if (InputEngine.IsKeyHeld(Keys.Space) || InputEngine.IsMouseLeftClick() 
+                        || InputEngine.CurrentPadState.Buttons.A == ButtonState.Pressed)
                     MyProjectile.fire(Site.TilePosition);
             }
                 
-            if (MyProjectile != null)
-                MyProjectile.Update(gameTime);
+            //if (MyProjectile != null)
+            //    MyProjectile.Update(gameTime);
             // update the health bar object
             //if (Hbar != null)
             //{

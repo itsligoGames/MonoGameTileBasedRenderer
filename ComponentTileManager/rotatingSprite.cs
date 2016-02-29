@@ -83,6 +83,7 @@ namespace AnimatedSprite
 
         public void followPosition(Vector2 Pos)
         {
+            
             angleOfRotation = TurnToFace( Pos, PixelPosition, angleOfRotation, rotationSpeed);
         }
 
