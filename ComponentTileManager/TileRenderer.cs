@@ -25,22 +25,29 @@ namespace ComponentTileManager
         private Texture2D _tileSheet;
         private object _font;
         private List<TileRef> _tileRefs = new List<TileRef>();
-        private List<Tile> _path = new List<Tile>();
+        //private List<Tile> _path = new List<Tile>();
         private List<SimpleSprite> _pathTiles = new List<SimpleSprite>();
-        PlayerWithWeapon _player;
+        PlayerWithWeapon player;
         List<SimpleSprite> _collisionSet = new List<SimpleSprite>();
         List<Tower> _towers = new List<Tower>();
-        Dictionary<TILETYPES, TileRef> _tileTypeRefs = new Dictionary<TILETYPES, TileRef>();
-        List<TILETYPES> _tileTypes = new List<TILETYPES>();
-        List<TILETYPES> _nonPassableTiles = new List<TILETYPES>();
         Vector2 TileTransform;
-        // To be replaced by Sentry Components
-        List<Sentry> _enemies = new List<Sentry>();
+        Vector2 ViewportCentre
+        {
+            get
+            {
+                return new Vector2(GraphicsDevice.Viewport.Width / 2,
+                GraphicsDevice.Viewport.Height / 2);
+            }
+        }
+        private Camera cam;
+        int tileWidth = 64;
+        int tileHeight = 64;
+        int[,] tileMap = new int[,] { };
 
+        List<Sentry> _enemies = new List<Sentry>();
         List<Tile> _spawnPositions = new List<Tile>();
         List<Color> _spawnColor = new List<Color> { Color.Blue, Color.White, Color.Red, Color.RosyBrown };
         Texture2D _txShowRectangle;
-
         List<FollowingEnemy> _followers = new List<FollowingEnemy>();
 
         public TileManager TileManager
@@ -56,14 +63,11 @@ namespace ComponentTileManager
             }
         }
 
-        public TileRenderer(Game game, int[,] tileMap, int tileWidth, int tileHeight) : base(game)
+        public TileRenderer(Game game, int[,] Map, int tileWidth, int tileHeight) : base(game)
         {
             game.Components.Add(this);
             _tileManager = new TileManager();
-            // Tile sheet that all sprites are taken from
-            _tileSheet = game.Content.Load<Texture2D>(@"Tiles\tank tiles 64 x 64");
-            game.Services.AddService(_tileSheet);
-            _font = game.Content.Load<SpriteFont>("message");
+            tileMap = Map;
             // texture to show collision fields for enemies
             _txShowRectangle = game.Content.Load<Texture2D>("Collison");
             _tileRefs.Add(new TileRef(4, 2, 0));
@@ -72,14 +76,6 @@ namespace ComponentTileManager
             _tileRefs.Add(new TileRef(6, 2, 3));
             _tileRefs.Add(new TileRef(0, 2, 4));
             TileTransform = new Vector2(tileWidth, tileHeight);
-            // alternate representation for tile layer references
-            //_tileTypeRefs.Add(TILETYPES.FREE, new TileRef(4, 2, 0));
-            //_tileTypeRefs.Add(TILETYPES.PAVEMENT, new TileRef(3, 3, 1));
-            //_tileTypeRefs.Add(TILETYPES.GROUND, new TileRef(6, 3, 2));
-            //_tileTypeRefs.Add(TILETYPES.BLUE, new TileRef(6, 4, 3));
-            //_nonPassableTiles.Add(TILETYPES.FREE);
-            //_nonPassableTiles.Add(TILETYPES.GROUND);
-            //_nonPassableTiles.Add(TILETYPES.BLUE);
 
             string[] backTileNames = { "free", "pavement", "ground", "blue", "home" };
             string[] impassibleTiles = { "free", "ground", "blue" };
@@ -98,6 +94,31 @@ namespace ComponentTileManager
             createSpawnPositions();
             setupTowers();
             setupFollowers(tileWidth, tileHeight);
+            
+
+        }
+
+        public override void Initialize()
+        {
+            //_tileRenderer = new TileRenderer(this, tileMap, tileWidth, tileHeight);
+            cam = new Camera(ViewportCentre,
+                        new Vector2(tileMap.GetLength(1) * tileWidth,
+                            tileMap.GetLength(0) * tileHeight), GraphicsDevice.Viewport);
+            cam.CamPos = Vector2.Zero;
+            Game.Services.AddService<Camera>(cam);
+            setupPlayer();
+            AddPlayer(player);
+            new InputEngine(Game);
+            base.Initialize();
+        }
+
+        protected override void LoadContent()
+        {
+            // Tile sheet that all sprites are taken from
+            _tileSheet = Game.Content.Load<Texture2D>(@"Tiles\tank tiles 64 x 64");
+            Game.Services.AddService(_tileSheet);
+            _font = Game.Content.Load<SpriteFont>("message");
+            base.LoadContent();
         }
 
         private void setupTowers()
@@ -274,20 +295,20 @@ namespace ComponentTileManager
 
         public override void Update(GameTime gameTime)
         {
-            if (_player != null)
+            if (player != null)
             {
                 // pixelMove is now tileMove
-                _player.tileMove(_collisionSet);
-                _tileManager.CurrentTile = _player.CurrentPlayerTile =
-                    _tileManager.ActiveLayer.getPassableTileAt((int)Math.Round(_player.TilePosition.X),
-                                            (int)Math.Round(_player.TilePosition.Y));
+                player.tileMove(_collisionSet);
+                _tileManager.CurrentTile = player.CurrentPlayerTile =
+                    _tileManager.ActiveLayer.getPassableTileAt((int)Math.Round(player.TilePosition.X),
+                                            (int)Math.Round(player.TilePosition.Y));
 
                 foreach (FollowingEnemy _enemy in _followers)
                 {
-                    _player.HitTest(_enemy);
-                    _enemy.follow(_player);
+                    player.HitTest(_enemy);
+                    _enemy.follow(player);
                     // Test if there is an explosion on the enemy from the player projectile
-                    _enemy.HitTest(_player);
+                    _enemy.HitTest(player);
 
                 }
 
@@ -303,10 +324,10 @@ namespace ComponentTileManager
                 foreach (var _enemy in _enemies)
                 {
                     // Test if there is an explosion on the enemy from the player projectile
-                    _player.HitTest(_enemy);
-                    _enemy.follow(_player);
+                    player.HitTest(_enemy);
+                    _enemy.follow(player);
                     // Test if there is an explosion on the enemy from the player projectile
-                    _enemy.HitTest(_player);
+                    _enemy.HitTest(player);
                 }
                 // remove destroyed enemies
                 var dead = _enemies.Where(s => s.Health <= 0).ToList();
@@ -318,20 +339,20 @@ namespace ComponentTileManager
                 }
 
                 // if the player is dead then we just restart
-                if (_player.Health <= 0)
+                if (player.Health <= 0)
                 { 
-                    AddPlayer(_player); // resets the player
-                    setupEnemies(5, _player.FrameWidth, _player.FrameHeight); // resets enemies
+                    AddPlayer(player); // resets the player
+                    setupEnemies(5, player.FrameWidth, player.FrameHeight); // resets enemies
                 }
 
                 foreach (FollowingEnemy _enemy in _followers)
                 {
-                    _enemy.checkPosition(_tileManager, _player.CurrentPlayerTile);
+                    _enemy.checkPosition(_tileManager, player.CurrentPlayerTile);
                     //showPathTiles(_enemy.CurrentPath.ToList());
                 }
 
                 Camera Cam = Game.Services.GetService<Camera>();
-                Cam.follow(_player.PixelPosition,
+                Cam.follow(player.PixelPosition,
                  GraphicsDevice.Viewport);
             }
             //if (InputEngine.IsKeyPressed(Microsoft.Xna.Framework.Input.Keys.R))
@@ -371,12 +392,12 @@ namespace ComponentTileManager
         public void AddPlayer(PlayerWithWeapon p)
         {
             // Add the player and set its current Tile to be the home Tile and it's position to match the home Tile
-            _player = p;
-            _player.CurrentPlayerTile = _tileManager.ActiveLayer.Passable.Where(t => t.TileName == "home").FirstOrDefault();
-            if (_player.CurrentPlayerTile != null)
+            player = p;
+            player.CurrentPlayerTile = _tileManager.ActiveLayer.Passable.Where(t => t.TileName == "home").FirstOrDefault();
+            if (player.CurrentPlayerTile != null)
             {
-                _tileManager.CurrentTile = _player.CurrentPlayerTile;
-                _player.TilePosition = new Vector2(_player.CurrentPlayerTile.X, _player.CurrentPlayerTile.Y);
+                _tileManager.CurrentTile = player.CurrentPlayerTile;
+                player.TilePosition = new Vector2(player.CurrentPlayerTile.X, player.CurrentPlayerTile.Y);
             }
             p.Health = 100;
             p.Hbar = new Helpers.HealthBar(Game, p.PixelPosition + new Vector2(-10, -10));
@@ -387,6 +408,79 @@ namespace ComponentTileManager
             //_path = Path(Start, Finish);
             //showPathTiles(_path);
         }
+
+        private void setupPlayer()
+        {
+            // initially left facing for proper rotations towards the mouse
+            List<TileRef> initialFrames = new List<TileRef>() {
+                    new TileRef(16, 2, 0),
+                    new TileRef(16, 3, 0),
+                    new TileRef(16, 4, 0),
+                    new TileRef(16, 5, 0),
+                    new TileRef(16, 6, 0),
+                    new TileRef(16, 7, 0),
+                    new TileRef(16, 8, 0),
+        };
+
+            
+            player = new PlayerWithWeapon(Game, cam, new Vector2(0, 0), new Vector2(tileMap.GetLength(1), tileMap.GetLength(0)),
+                            initialFrames,
+                            64, 64, 1.0f); // Default stopped
+
+            player.setFrameSet(DIRECTION.UP,
+                                new List<TileRef> {
+                            new TileRef(15, 0, 0),
+                            new TileRef(16, 0, 0),
+                            new TileRef(17, 0, 0),
+                            new TileRef(18, 0, 0),
+                            new TileRef(19, 0, 0),
+                            new TileRef(20, 0, 0),
+                            new TileRef(21, 0, 0)
+                                });
+            player.setFrameSet(DIRECTION.DOWN,
+                new List<TileRef> {
+                    new TileRef(15, 1, 0),
+                    new TileRef(16, 1, 0),
+                    new TileRef(17, 1, 0),
+                    new TileRef(18, 1, 0),
+                    new TileRef(19, 1, 0),
+                    new TileRef(20, 1, 0),
+                    new TileRef(21, 1, 0),
+            });
+            player.setFrameSet(DIRECTION.LEFT,
+                new List<TileRef> {
+                    new TileRef(16, 2, 0),
+                    new TileRef(16, 3, 0),
+                    new TileRef(16, 4, 0),
+                    new TileRef(16, 5, 0),
+                    new TileRef(16, 6, 0),
+                    new TileRef(16, 7, 0),
+                    new TileRef(16, 8, 0),
+            });
+            player.setFrameSet(DIRECTION.RIGHT,
+                new List<TileRef> {
+                    new TileRef(15, 2, 0),
+                    new TileRef(15, 3, 0),
+                    new TileRef(15, 4, 0),
+                    new TileRef(15, 5, 0),
+                    new TileRef(15, 6, 0),
+                    new TileRef(15, 7, 0),
+                    new TileRef(15, 8, 0),
+            });
+            Projectile p = new Projectile(Game, player.PixelPosition,
+                new List<TileRef>() { new TileRef(3,0,0),
+                                        new TileRef(4,0,0),
+                                        new TileRef(5,0,0),
+                                        new TileRef(6,0,0)},
+                new List<TileRef>() { new TileRef(0,0,0),
+                                        new TileRef(1,0,0),
+                                        new TileRef(2,0,0)
+                                        },
+                player.FrameWidth, player.FrameHeight, 1f);
+            player.CurrentPlayerTile = TileManager.CurrentTile;
+            player.loadProjectile(p);
+        }
+
 
         public override void Draw(GameTime gameTime)
         {
@@ -411,9 +505,9 @@ namespace ComponentTileManager
                     , Color.White);
             }
             // Draw the player position
-            if (_player != null)
+            if (player != null)
             {
-                sp.DrawString(font,  "Site pos " + _player.Site.PixelPosition.ToString(), _player.Site.PixelPosition, Color.White);
+                sp.DrawString(font,  "Site pos " + player.Site.PixelPosition.ToString(), player.Site.PixelPosition, Color.White);
                 //_player.Draw(sp, _tileSheet);
 
                 foreach (var _enemy in _followers)

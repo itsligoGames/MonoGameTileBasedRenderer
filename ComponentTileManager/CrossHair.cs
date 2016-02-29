@@ -59,7 +59,7 @@ namespace AnimatedSprite
                     //    new Vector2(_cam.View.Bounds.Width, _cam.View.Bounds.Height));
                 }
             }
-            else
+            else if(_cam != null)
             {
                 TilePosition = InputEngine.MousePosition / new Vector2(FrameWidth, FrameHeight)
                                 + _cam.CamPos / new Vector2(FrameWidth, FrameHeight);

@@ -165,28 +165,28 @@ namespace AnimatedSprite
                 followPosition(Site.PixelPosition);
             }
 
-            if (InputEngine.IsKeyHeld(Keys.Right) || InputEngine.CurrentPadState.DPad.Right == ButtonState.Pressed)
+            if (InputEngine.IsKeyHeld(Keys.Right) || InputEngine.IsKeyHeld(Keys.D) || InputEngine.CurrentPadState.DPad.Right == ButtonState.Pressed)
             {
                 angleOfRotation = 0f;
                 TilePosition += new Vector2(1, 0) * speed;
                 _direction = DIRECTION.RIGHT;
                 MovingState = STATE.MOVING;
             }
-            if (InputEngine.IsKeyHeld(Keys.Left) || InputEngine.CurrentPadState.DPad.Left == ButtonState.Pressed)
+            if (InputEngine.IsKeyHeld(Keys.Left)|| InputEngine.IsKeyHeld(Keys.A) || InputEngine.CurrentPadState.DPad.Left == ButtonState.Pressed)
             {
                 angleOfRotation = 0f;
                 TilePosition += new Vector2(-1, 0) * speed;
                 _direction = DIRECTION.LEFT;
                 MovingState = STATE.MOVING;
             }
-            if (InputEngine.IsKeyHeld(Keys.Up) || InputEngine.CurrentPadState.DPad.Up == ButtonState.Pressed)
+            if (InputEngine.IsKeyHeld(Keys.Up) || InputEngine.IsKeyHeld(Keys.W) || InputEngine.CurrentPadState.DPad.Up == ButtonState.Pressed)
             {
                 angleOfRotation = 0f;
                 TilePosition += new Vector2(0, -1) * speed;
                 _direction = DIRECTION.UP;
                 MovingState = STATE.MOVING;
             }
-            if (InputEngine.IsKeyHeld(Keys.Down) || InputEngine.CurrentPadState.DPad.Down == ButtonState.Pressed)
+            if (InputEngine.IsKeyHeld(Keys.Down) || InputEngine.IsKeyHeld(Keys.S) || InputEngine.CurrentPadState.DPad.Down == ButtonState.Pressed)
             {
                 angleOfRotation = 0f;
                 TilePosition += new Vector2(0, 1) * speed;
