@@ -10,7 +10,7 @@ using TileManagerNS;
 namespace ComponentTileManager
 {
 
-    class FollowingEnemy:  Sentry
+    public class FollowingEnemy:  Sentry
     {
         Stack<Tile> currentPath = new Stack<Tile>();
         Tile currentTile;

@@ -21,12 +21,6 @@ namespace AnimatedSprite
 
         private Rectangle boundingRectangle;
 
-        public bool Visible
-        {
-            get { return visible; }
-            set { visible = value; }
-        }
-
         private Vector2 _tileposition;
         public Vector2 TilePosition
         {
@@ -118,7 +112,7 @@ namespace AnimatedSprite
         {
             spriteDepth = layerDepth;
             TilePosition = userPosition;
-            visible = true;
+            Visible = true;
             FrameHeight = frameHeight;
             FrameWidth = frameWidth;
             Frames = sheetRefs;
@@ -184,7 +178,7 @@ namespace AnimatedSprite
             Texture2D SpriteSheet = Game.Services.GetService<Texture2D>();
             Camera Cam = Game.Services.GetService<Camera>();
 
-            if (visible)
+            if (Visible)
             {
                 spriteBatch.Begin(SpriteSortMode.Immediate,
                         BlendState.AlphaBlend, null, null, null, null, Cam.CurrentCameraTranslation);

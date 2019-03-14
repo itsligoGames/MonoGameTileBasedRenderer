@@ -50,7 +50,7 @@ namespace ComponentTileManager
         List<Color> _spawnColor = new List<Color> { Color.Blue, Color.White, Color.Red, Color.RosyBrown };
         Texture2D _txShowRectangle;
         List<FollowingEnemy> _followers = new List<FollowingEnemy>();
-
+        FollowingEnemy platformer;
         public TileManager TileManager
         {
             get
@@ -76,9 +76,10 @@ namespace ComponentTileManager
             _tileRefs.Add(new TileRef(6, 3, 2));
             _tileRefs.Add(new TileRef(6, 2, 3));
             _tileRefs.Add(new TileRef(0, 2, 4));
+            _tileRefs.Add(new TileRef(0, 2, 5));
             TileTransform = new Vector2(tileWidth, tileHeight);
 
-            string[] backTileNames = { "free", "pavement", "ground", "blue", "home" };
+            string[] backTileNames = { "free", "pavement", "ground", "blue", "home","sentry_post" };
             string[] impassibleTiles = { "free", "ground", "blue" };
 
             _tileManager.addLayer("background",
@@ -134,6 +135,17 @@ namespace ComponentTileManager
                 _towers.Add(s);
             }
 
+
+        }
+
+
+        private void createSentryPosts()
+        {
+
+            _tileManager.ActiveLayer.Passable
+                .OrderBy(t => t.Y)
+                .OrderByDescending(t => t.X)
+                .First();
 
         }
 
@@ -194,6 +206,17 @@ namespace ComponentTileManager
                   new List<TileRef>() { // Image reference
                     new TileRef(17,7,0)
                        }, tileWidth, tileHeight, 1.5f));
+
+            // Create another Follower to work between two towers
+            //platformer = new FollowingEnemy(Game,
+            //      new Vector2(SpawnTower.X,         // Tile position
+            //                      SpawnTower.Y),
+            //                      _tileManager.ActiveLayer.getPassableTileAt((int)SpawnTower.X,
+            //                      (int)SpawnTower.Y), // Current Tile
+            //      new List<TileRef>() { // Image reference
+            //        new TileRef(17,7,0)
+            //           }, tileWidth, tileHeight, 1.5f);
+
             loadFollowerProjectiles();
         }
 
