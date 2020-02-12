@@ -50,7 +50,10 @@ namespace ComponentTileManager
         List<Color> _spawnColor = new List<Color> { Color.Blue, Color.White, Color.Red, Color.RosyBrown };
         Texture2D _txShowRectangle;
         List<FollowingEnemy> _followers = new List<FollowingEnemy>();
-        FollowingEnemy platformer;
+        List<TiledPlatformer> PlatformStyleSentries = new List<TiledPlatformer>();
+
+        private List<TilePair> Pairs = new List<TilePair>();
+
         public TileManager TileManager
         {
             get
@@ -96,8 +99,9 @@ namespace ComponentTileManager
             createSpawnPositions();
             setupTowers();
             setupFollowers(tileWidth, tileHeight);
-            
-
+            // get all the tile pairs for platform style sentries 
+            getTilePairs("sentry_post");
+            setupTilePairs(tileWidth, tileHeight);
         }
 
         public override void Initialize()
@@ -186,6 +190,34 @@ namespace ComponentTileManager
                                 new Vector2(t.TileWidth, t.TileHeight));
                 s.Visible = true;
                 _pathTiles.Add(s);
+            }
+        }
+
+        public List<TilePair> getTilePairs(string identifier)
+        {
+            // Get horizontal pairs
+            Pairs = new List<TilePair>();
+            var horizontal = _tileManager.ActiveLayer.Passable
+                .Where(t => t.TileName == identifier)
+                .OrderBy(t => t.X)
+                .ToList();
+            for (int i = 0; i < horizontal.Count -2; i++)
+            {
+                Pairs.Add(new TilePair { tile1 = horizontal[i], tile2 = horizontal[i + 1] });
+            }
+            return Pairs;
+        }
+
+        public void setupTilePairs(int tileWidth, int tileHeight)
+        {
+            foreach (var pair in Pairs)
+            {
+                new TiledPlatformer(Game, pair,
+                  new Vector2(pair.tile1.X, pair.tile1.Y),
+                                  pair.tile1, // Current Tile
+                  new List<TileRef>() { // Image reference
+                    new TileRef(17,7,0)
+                       }, tileWidth, tileHeight, 1.5f);
             }
         }
 
@@ -379,7 +411,10 @@ namespace ComponentTileManager
                     _enemy.checkPosition(_tileManager, player.CurrentPlayerTile);
                     //showPathTiles(_enemy.CurrentPath.ToList());
                 }
-
+                foreach (var platformer in PlatformStyleSentries)
+                {
+                    platformer.checkPosition(_tileManager, platformer.CurrentPlayerTile);
+                }
                 Camera Cam = Game.Services.GetService<Camera>();
                 Cam.follow(player.PixelPosition,
                  GraphicsDevice.Viewport);

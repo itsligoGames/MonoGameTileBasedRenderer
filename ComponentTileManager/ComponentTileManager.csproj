@@ -61,6 +61,7 @@
     <Compile Include="TileComparer.cs" />
     <Compile Include="TiledPlatformer.cs" />
     <Compile Include="TileManager.cs" />
+    <Compile Include="TilePairs.cs" />
     <Compile Include="TileRef.cs" />
     <Compile Include="TileRenderer.cs" />
     <Compile Include="Tower.cs" />
